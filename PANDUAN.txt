@@ -1,0 +1,107 @@
+ARENA PEMBURU - PANDUAN PASANG GRATIS DI RENDER (dengan kendali guru)
+=====================================================================
+
+Isi folder: server.js, package.json, index.html (game), PANDUAN.txt
+(Folder node_modules tidak perlu diunggah.)
+
+A. UNGGAH KE GITHUB
+1. Masuk ke github.com (daftar gratis jika belum punya).
+2. New repository, nama: arena-pemburu, pilih Public, klik Create.
+3. Klik "uploading an existing file", seret 3 file: server.js, package.json, index.html.
+4. Klik Commit changes.
+(Jika memperbarui versi lama: unggah ulang file dengan nama sama, Render otomatis memasang ulang.)
+
+B. PASANG DI RENDER
+1. Buka render.com, klik Sign in with GitHub.
+2. New > Web Service, pilih repo arena-pemburu.
+3. Isi:
+   - Runtime        : Node
+   - Build Command  : npm install
+   - Start Command  : npm start
+   - Instance Type  : Free
+4. Buka bagian Environment, tambahkan variabel:
+   - Nama  : PIN_GURU
+   - Isi   : PIN rahasia pilihan Ibu (contoh: angka 6 digit)
+   Jika tidak diisi, PIN bawaannya adalah: guru123 (sebaiknya diganti).
+5. Klik Deploy. Tunggu sampai statusnya Live.
+6. Alamat game: https://arena-pemburu-xxxx.onrender.com
+
+C. ALUR DI KELAS
+GURU
+1. Buka alamat game 5-10 menit sebelum jam pelajaran (layanan gratis perlu bangun dulu).
+2. Klik "Saya guru", masukkan PIN. Layar proyektor muncul dengan KODE GAME (5 karakter).
+3. Tulis kode di papan tulis. Siswa yang masuk akan terhitung di panel kiri.
+4. Atur DURASI (10-60 menit) dan TARGET SOAL (tanpa target, 20-100 soal) di panel guru,
+   lalu klik "Mulai game". Ada hitung mundur bersiap 15 detik, lalu permainan berjalan.
+   Pilihan ini terkunci selama ronde berjalan dan berlaku di ronde berikutnya.
+   Game selesai jika SALAH SATU terjadi: waktu habis, tinggal satu tim, atau sebuah tim
+   mencapai target soal. Aturan ini tampil di bawah jam, dan alasan selesai tampil di layar hasil.
+5. "Mulai ronde baru" mengulang permainan dari awal.
+   "Akhiri & kembali menunggu" menghentikan game sampai guru memulai lagi.
+6. Alat bantu guru (panel kiri):
+   - Jeda / Lanjutkan : menghentikan game sementara untuk semua siswa; waktu ronde ikut berhenti.
+   - Laporan          : tabel jawaban benar/salah tiap siswa, 5 soal yang paling sering salah,
+                        dan tombol Unduh CSV (dibuka di Excel).
+   - Kelola pemain    : memindahkan siswa ke tim lain atau mengeluarkan siswa dari game
+                        (misalnya nama tidak pantas).
+   - Bank soal        : mengganti soal dengan materi Ibu sendiri (lihat bagian E di bawah).
+   Laporan menumpuk selama kode game yang sama masih aktif (tidak diulang tiap ronde).
+SISWA
+1. Buka alamat game di HP (putar ke landscape), ketik kode dari guru, klik Lanjut.
+2. Isi nama, pilih tim, klik Masuk Arena.
+3. Sebelum guru menekan Mulai, siswa hanya bisa berjalan-jalan, belum bisa menembak.
+4. Saat pertama kali masuk, tutorial 5 langkah muncul otomatis (aturan, kontrol, soal, nyawa, cara menang).
+   Siswa bisa membukanya lagi lewat tombol "Cara bermain" di kartu pemain, atau tombol H di komputer.
+   Sebaiknya beri waktu 2-3 menit untuk membaca tutorial sebelum guru menekan Mulai game.
+Satu server bisa dipakai beberapa kelas sekaligus: tiap guru membuat game sendiri
+dan mendapat kode berbeda.
+
+D. CATATAN
+- Siswa tidak perlu akun apa pun, tetapi butuh kuota data.
+- Layanan gratis bisa restart sewaktu-waktu. Selama halaman guru MASIH TERBUKA, game pulih
+  otomatis: kode game, waktu ronde, dan bank soal dikembalikan, siswa tersambung lagi sendiri
+  (muncul tulisan "Koneksi terputus. Menyambung ulang..." beberapa detik). Yang hilang hanya
+  data Laporan jawaban, jadi unduh CSV secara berkala. Jika halaman guru ikut tertutup,
+  klik "Saya guru" lagi lalu "Mulai game".
+- Pemeriksaan kecurangan: server membatasi lonjakan jawaban, poin, nyawa, dan perpindahan yang
+  tidak wajar dari HP siswa. Siswa yang datanya sering dikoreksi tampil di Laporan, bagian
+  "Peringatan data tidak wajar". Itu petunjuk, bukan bukti.
+- Layanan gratis tertidur setelah 15 menit tanpa lalu lintas; selama game berjalan itu tidak terjadi.
+- Jangan bagikan PIN guru ke siswa.
+
+E. MENGGANTI BANK SOAL (tombol "Bank soal" di panel guru)
+Ada dua cara memasukkan soal:
+1. Tempel teks di kotak, format blok. Pisahkan antar soal dengan SATU BARIS KOSONG:
+
+   Simbol belah ketupat pada flowchart dipakai untuk?
+   A. Mulai
+   B. Proses
+   C. Keputusan
+   D. Output
+   Jawaban: C
+   Penjelasan: Belah ketupat menandakan percabangan ya/tidak.
+
+   - Pilihan boleh 2 sampai 5 (A sampai E). "Jawaban" diisi satu huruf.
+   - Kotak sudah terisi soal yang sedang dipakai, jadi bisa diedit langsung.
+2. Muat file CSV dari Excel. Klik "Unduh contoh CSV" untuk melihat bentuknya.
+   Kolom: Soal;A;B;C;D;E;Kunci;Penjelasan. Simpan di Excel sebagai "CSV UTF-8".
+
+Lalu klik "Simpan & kirim ke siswa". Soal langsung berlaku untuk semua siswa di game itu,
+termasuk yang masuk belakangan. Soal yang tidak valid dilewati, dan Ibu diberi tahu jumlahnya.
+"Pakai soal bawaan" mengembalikan soal Flowchart semula.
+- Maksimal 200 soal per game. Soal baru berlaku untuk soal yang dibuka sesudahnya.
+- Jika server restart, Ibu klik "Saya guru" lagi; soal Ibu dikirim ulang otomatis selama
+  halaman guru belum ditutup.
+- Soal hanya tersimpan selama game aktif. Simpan teks soal Ibu di file sendiri.
+
+
+F. POSISI TUBUH DAN BERSEMBUNYI (fitur baru, suasana medan perang)
+- Siswa bisa berdiri, jongkok, merangkak, dan tiarap: tombol 1-4 (atau C, X, Z) di komputer; tombol di bawah layar di HP.
+- Makin rendah: makin sulit tertembak dan bidikan makin stabil, tetapi jalan makin lambat.
+- Semak belukar (gerumbul hijau gelap) menyembunyikan siswa yang jongkok/merangkak/tiarap dari tim lawan, kecuali sangat dekat atau baru menembak. Teman satu tim tetap terlihat samar. Layar proyektor guru menampilkan semua siswa.
+- Tampilan baru: karung pasir, kawah, kawat berduri, bangkai kendaraan berasap, debu, dan dentuman jauh.
+- server.js tidak berubah; cukup unggah ulang index.html (dan PANDUAN.txt) ke GitHub.
+
+G. SISWA YANG NYAWANYA HABIS
+- Siswa yang kehabisan semua nyawa tidak bisa hidup lagi di ronde itu (tidak ada lagi Misi Bangkit).
+- Mereka tetap membantu: tombol BANTU TIM (atau R) membuka soal; tiap jawaban benar mengisi +6 peluru semua kawan satu tim yang masih hidup.

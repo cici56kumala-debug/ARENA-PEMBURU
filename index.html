@@ -1,0 +1,1376 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Arena Flowchart</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: satu kanvas arena penuh layar; HUD melayang di tepi; lobi dan soal sebagai lapisan di atasnya. */
+:root{
+  --bg:#060a18; --panel:rgba(9,15,34,.82); --line:rgba(120,170,255,.24);
+  --fg:#e9f1ff; --mute:#8ea3c9; --accent:#38e1ff; --danger:#ff4d6d; --ok:#38e08c;
+  --t0:#ff4d6d; --t1:#3ea6ff; --t2:#f4f6f8; --t3:#ffc233; --t4:#b57bff;
+  --display:'Chakra Petch','Trebuchet MS',sans-serif; --body:'Barlow','Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;overscroll-behavior:none;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#app{position:relative;width:100%;height:100%;overflow:hidden;background:#03050d}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+#hud>*{pointer-events:none}
+#hud button{pointer-events:auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(6px)}
+#meCard{position:absolute;left:12px;top:12px;width:210px;padding:10px 12px}
+#mcTop{display:flex;align-items:center;gap:8px;justify-content:space-between}
+#mcName{font:700 16px var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mcTeam{font:600 11px var(--display);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;color:#06101f;white-space:nowrap}
+.bar{height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#2bd47d,#8cf5b6);transition:width .15s}
+#ammo{display:flex;gap:3px;margin-top:8px;flex-wrap:wrap}
+#ammo b{width:9px;height:14px;border-radius:2px;background:var(--accent);box-shadow:0 0 6px rgba(56,225,255,.6)}
+#ammo b.off{background:rgba(255,255,255,.12);box-shadow:none}
+#mcState{margin-top:7px;font-size:12px;color:var(--mute);min-height:16px}
+#mcState.warn{color:var(--t3);font-weight:600}
+#top{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;max-width:calc(100% - 470px)}
+#clock{font:700 22px var(--display);letter-spacing:.06em;padding:3px 16px;font-variant-numeric:tabular-nums}
+#clock small{display:block;font:500 10px var(--display);letter-spacing:.16em;color:var(--mute);text-align:center}
+#teams{display:flex;gap:6px}
+.tchip{min-width:96px;padding:5px 9px;border-radius:8px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--c);font:600 12px var(--display);display:flex;flex-direction:column;gap:1px}
+.tchip.mine{box-shadow:0 0 0 1px var(--c),0 0 14px -2px var(--c)}
+.tchip span{color:var(--mute);font:500 10px var(--body);white-space:nowrap}
+.tchip b{font:700 18px var(--display);color:var(--c);font-variant-numeric:tabular-nums}
+#side{position:absolute;right:12px;top:12px;width:210px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+#mini{width:168px;height:112px;border-radius:8px;border:1px solid var(--line);background:#0c2415}
+#lb{list-style:none;margin:0;padding:8px 10px;width:100%;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+#lb li{display:flex;gap:6px;align-items:center}
+#lb li i{width:8px;height:8px;border-radius:2px;background:var(--c);flex:none}
+#lb li span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lb li b{font:600 13px var(--display);font-variant-numeric:tabular-nums}
+#lb li.me span{font-weight:600;color:#fff}
+#lbT{font:600 10px var(--display);letter-spacing:.16em;color:var(--mute);margin-bottom:2px}
+#feed{display:flex;flex-direction:column;gap:3px;align-items:flex-end;width:100%}
+#feed div{font-size:12px;padding:3px 8px;border-radius:6px;background:rgba(6,10,24,.75);border-right:3px solid var(--c);animation:fi .2s}
+@keyframes fi{from{opacity:0;transform:translateX(10px)}}
+#conn{position:absolute;left:12px;bottom:12px;font:600 11px var(--display);letter-spacing:.1em;padding:5px 10px}
+#conn i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px}
+#conn.off i{background:var(--danger)}
+#conn.solo i{background:var(--t3)}
+#hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:12px;color:var(--mute);text-align:center;padding:5px 12px;white-space:nowrap}
+#hint kbd{font:600 11px var(--display);padding:1px 6px;border:1px solid var(--line);border-radius:4px;color:var(--fg)}
+#btnQuiz{position:absolute;right:12px;bottom:12px;padding:12px 18px;border-radius:10px;border:1px solid var(--accent);background:rgba(56,225,255,.12);font:700 14px var(--display);letter-spacing:.04em;color:var(--accent)}
+#btnQuiz.ready{background:var(--accent);color:#04121c;animation:pulse 1s infinite}
+#btnQuiz:disabled{opacity:.45;cursor:default}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(56,225,255,.0),0 0 22px rgba(56,225,255,.7)}}
+#btnMute{position:absolute;right:12px;bottom:66px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-size:16px}
+#toast{z-index:20;position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:700 18px var(--display);padding:10px 20px;border-radius:10px;background:rgba(6,10,24,.9);border:1px solid var(--accent);opacity:0;transition:opacity .25s;pointer-events:none;text-align:center;max-width:90%}
+#toast.on{opacity:1}
+
+#mission{margin-top:6px;font-size:12px;line-height:1.5;color:var(--mute)}
+#gc{width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg);font:700 28px var(--display);text-align:center;letter-spacing:.3em;text-transform:uppercase;-webkit-user-select:text;user-select:text}
+#waitbar{z-index:9;position:absolute;left:50%;top:130px;transform:translateX(-50%);padding:10px 18px;font:700 16px var(--display);text-align:center;color:var(--accent);max-width:90%}
+#waitbar span{font:500 12px var(--body);color:var(--mute)}
+#ctl{z-index:15;position:absolute;left:12px;top:12px;width:240px;padding:14px}
+#tmod{z-index:16;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(780px,94vw);max-height:84vh;overflow:auto;padding:16px}
+#tmHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+#tmod table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px}
+#tmod th,#tmod td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+#tmod p{font-size:13px;line-height:1.5;margin:6px 0}#tmod h4{margin:14px 0 4px}
+#tmod .sm{padding:6px 10px;font-size:12px;margin-right:6px}#tmod select{background:#10202c;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px}
+#tmod textarea{width:100%;box-sizing:border-box;background:#0c1a24;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px;font:12.5px/1.45 monospace;-webkit-user-select:text;user-select:text}
+#tmod input[type=file]{font-size:12px;margin:8px 0;max-width:100%}
+#ctl label{display:block;font:600 10px var(--display);letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+#ctl select{width:100%;margin-top:3px;background:#10202c;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px;font:600 13px var(--body)}
+#tut{z-index:17;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);padding:20px 22px;box-shadow:0 0 0 100vmax rgba(2,8,14,.72)}
+#tut .tn{font:600 11px var(--display);letter-spacing:.16em;color:var(--mute);text-transform:uppercase}
+#tut h3{margin:6px 0 10px;font:700 24px var(--display);color:var(--accent)}
+#tut ul{margin:0 0 14px;padding-left:20px;font-size:14.5px;line-height:1.55}#tut li{margin-bottom:6px}
+#tutNav{display:flex;align-items:center;gap:8px}#tutDots{flex:1;text-align:center;letter-spacing:.3em;color:var(--mute);font-size:12px}
+#tutNav button{padding:10px 14px;font-size:14px}#tutBack:disabled{opacity:.4}
+#btnHow{margin-top:8px;padding:4px 10px;font-size:11px}
+#netbar{z-index:18;position:fixed;left:50%;top:10px;transform:translateX(-50%);padding:8px 16px;font:600 13px var(--display);color:#ffb020}
+#ctlCode{font:700 44px var(--display);letter-spacing:.2em;color:var(--accent)}
+#ctlInfo{font-size:12.5px;color:var(--mute);margin:6px 0 12px;line-height:1.5;white-space:pre-line}
+/* Touch */
+.stick{position:absolute;z-index:1;bottom:0;width:50%;height:55%;touch-action:none;display:none}
+#stickL{left:0}#stickR{right:0}
+.knob{position:absolute;z-index:2;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;border:2px solid var(--line);background:rgba(120,170,255,.08);pointer-events:none;display:none}
+.knob::after{content:"";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;border-radius:50%;background:rgba(56,225,255,.45);transform:translate(var(--dx,0),var(--dy,0))}
+.touch .stick{display:block}
+.touch #hint{display:none}
+.touch #btnQuiz{bottom:auto;top:136px;right:12px}
+.touch #lbPanel,.touch #feed{display:none}
+
+/* Lobi */
+#lobby{z-index:12;position:absolute;inset:0;overflow:auto;background:
+  radial-gradient(900px 500px at 12% 0,rgba(120,220,110,.20),transparent 60%),
+  radial-gradient(700px 500px at 100% 100%,rgba(255,210,90,.12),transparent 60%),
+  radial-gradient(500px 400px at 60% 40%,rgba(40,120,60,.35),transparent 70%),#07170d;
+  padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-user-select:text;user-select:text}
+#lobIn{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1.05fr 1fr;gap:32px;align-items:center;min-height:100%}
+#lobIn>*{min-width:0}
+.kicker{font:600 12px var(--display);letter-spacing:.24em;color:var(--accent);text-transform:uppercase}
+h1{font:700 clamp(40px,7vw,76px)/.95 var(--display);margin:10px 0 14px;letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent);text-shadow:0 0 28px rgba(56,225,255,.55)}
+.lead{color:var(--mute);font-size:16px;line-height:1.5;max-width:46ch;margin:0 0 18px}
+.rules{display:grid;gap:8px;padding:0;margin:0;list-style:none;max-width:52ch}
+.rules li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;font-size:14px;line-height:1.4}
+.rules svg{width:28px;height:28px}
+#form{padding:20px;display:flex;flex-direction:column;gap:14px}
+#form label{font:600 11px var(--display);letter-spacing:.16em;color:var(--mute);text-transform:uppercase}
+#nm{width:100%;margin-top:6px;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg);font:600 18px var(--display);-webkit-user-select:text;user-select:text}
+#tpick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:6px}
+.tc{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.03);text-align:left;min-width:0}
+.tc svg{width:30px;height:30px;flex:none}
+.tc b{display:block;font:700 13px var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tc span{font-size:11.5px;color:var(--mute)}
+.tc[aria-pressed=true]{border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);box-shadow:0 0 0 1px var(--c)}
+.tc.full{opacity:.45}
+.tc.auto{grid-column:1/-1}
+.go{padding:14px;border-radius:10px;border:0;background:var(--accent);color:#031019;font:700 17px var(--display);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 0 26px -4px rgba(56,225,255,.7)}
+.go:disabled{opacity:.5;box-shadow:none}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ghost{padding:10px;border-radius:9px;border:1px solid var(--line);background:transparent;font:600 13px var(--display)}
+#lstat{font-size:12.5px;color:var(--mute);min-height:18px}
+
+/* Soal */
+#quiz{z-index:10;position:absolute;inset:0;background:rgba(3,6,16,.62);display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto}
+#qcard{width:min(680px,100%);max-height:100%;overflow:auto;padding:18px 20px;background:#0a1230;border:1px solid var(--accent);border-radius:14px;box-shadow:0 0 60px -10px rgba(56,225,255,.5);-webkit-user-select:text;user-select:text}
+#qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;font:600 11px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+#qhead span:last-child{color:var(--mute)}
+#qtime{height:5px;background:rgba(255,255,255,.1);border-radius:3px;margin:10px 0 14px;overflow:hidden}
+#qtime i{display:block;height:100%;background:var(--accent);width:100%}
+#qtext{font:500 17px/1.45 var(--body);white-space:pre-line;margin:0 0 14px}
+#qopts{display:grid;gap:7px}
+.qo{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;text-align:left;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:14.5px;line-height:1.4}
+.qo i{font:700 13px var(--display);font-style:normal;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:rgba(120,170,255,.16)}
+.qo:hover:not(:disabled){border-color:var(--accent)}
+.qo.right{border-color:var(--ok);background:rgba(56,224,140,.14)}
+.qo.right i{background:var(--ok);color:#03150b}
+.qo.wrong{border-color:var(--danger);background:rgba(255,77,109,.14)}
+.qo.wrong i{background:var(--danger);color:#1a0309}
+.qo:disabled{cursor:default}
+#qres{margin-top:12px;padding:12px 14px;border-radius:9px;background:rgba(255,255,255,.05);font-size:14px;line-height:1.5}
+#qres h3{margin:0 0 4px;font:700 16px var(--display)}
+#qres.ok h3{color:var(--ok)} #qres.bad h3{color:var(--danger)}
+#qnext{margin-top:10px;width:100%}
+
+/* Hasil ronde */
+#result{z-index:10;position:absolute;inset:0;background:rgba(3,6,16,.78);display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto}
+#rcard{width:min(720px,100%);padding:22px;text-align:center}
+#rcard .kicker{display:block}
+#rwin{font:700 clamp(30px,6vw,52px) var(--display);margin:6px 0 2px;color:var(--c)}
+#rnext{color:var(--mute);font-size:14px;margin-bottom:14px}
+#rgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
+#rgrid>div{min-width:0}
+#rgrid h4{margin:0 0 6px;font:600 11px var(--display);letter-spacing:.16em;color:var(--mute)}
+.rr{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.04);margin-bottom:4px;border-left:4px solid var(--c);font-size:13.5px}
+.rr span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rr b{font:700 14px var(--display);font-variant-numeric:tabular-nums}
+
+@media (max-width:900px){
+  #lobIn{grid-template-columns:1fr;gap:18px;align-items:start}
+  #side{width:auto}
+  #lbPanel,#feed{display:none}
+  #top{max-width:calc(100% - 200px)}
+  .tchip{min-width:0;padding:4px 7px}.tchip span{display:none}
+  #meCard{width:170px}
+  #rgrid{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  #top{left:12px;transform:none;top:auto;bottom:12px;max-width:calc(100% - 24px);align-items:flex-start}
+  #teams{flex-wrap:nowrap}
+  #conn{display:none}
+  #meCard{top:12px}
+  #clock{position:absolute;right:0;top:-0px}
+  #side{top:12px}
+  .touch #btnQuiz{top:140px}
+  #btnMute{right:12px;bottom:auto;top:96px}
+  .tc{padding:8px}
+}
+#stance{position:absolute;left:12px;bottom:54px;display:flex;gap:6px}
+#stance button{min-width:66px;padding:7px 8px 6px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font:600 11px var(--display);display:flex;flex-direction:column;align-items:center;gap:2px;touch-action:none}
+#stance button i{font:700 13px var(--display);font-style:normal;color:var(--accent)}
+#stance button.on{background:var(--accent);color:#04121c;border-color:var(--accent)}#stance button.on i{color:#04121c}
+.touch #stance{left:50%;bottom:10px;transform:translateX(-50%)}.touch #stance button{min-width:64px;padding:11px 8px}
+@media (prefers-reduced-motion:reduce){#btnQuiz.ready{animation:none}#feed div{animation:none}}
+</style>
+
+<div id="app">
+  <canvas id="cv"></canvas>
+
+  <div id="hud" hidden>
+    <div id="meCard" class="panel">
+      <div id="mcTop"><span id="mcName"></span><span id="mcTeam"></span></div>
+      <div class="bar"><i id="hpBar"></i></div>
+      <div id="ammo"></div>
+      <div id="mcState"></div><div id="mission"></div><button id="btnHow" class="ghost" type="button">Cara bermain</button>
+    </div>
+    <div id="top">
+      <div id="clock" class="panel"><small id="clockLbl">SISA WAKTU</small><span id="clockT">8:00</span><small id="endrule"></small></div>
+      <div id="teams"></div>
+    </div>
+    <div id="side">
+      <canvas id="mini" width="336" height="224"></canvas>
+      <div id="lbPanel" class="panel" style="width:100%"><ol id="lb"></ol></div>
+      <div id="feed"></div>
+    </div>
+    <div id="conn" class="panel"><i></i><span id="connT"></span></div>
+    <div id="hint" class="panel"><kbd>WASD</kbd> gerak · <kbd>Mouse</kbd> bidik &amp; tembak · <kbd>1-4</kbd> berdiri/jongkok/merangkak/tiarap · <kbd>R</kbd> jawab soal isi amunisi · <kbd>E</kbd> di Zona Soal</div>
+    <div id="stance" hidden><button type="button" data-s="0"><i>1</i>Berdiri</button><button type="button" data-s="1"><i>2</i>Jongkok</button><button type="button" data-s="2"><i>3</i>Merangkak</button><button type="button" data-s="3"><i>4</i>Tiarap</button></div>
+    <button id="btnMute" aria-label="Suara">🔊</button>
+    <button id="btnQuiz">ISI AMUNISI · R</button>
+  </div>
+
+  <div id="stickL" class="stick"></div><div id="stickR" class="stick"></div>
+  <div id="knobL" class="knob"></div><div id="knobR" class="knob"></div>
+  <div id="toast"></div>
+  <div id="netbar" class="panel" hidden>Koneksi terputus. Menyambung ulang…</div>
+  <div id="waitbar" class="panel" hidden>Menunggu guru memulai game…<br><span>Kamu boleh berjalan-jalan, tetapi belum bisa menembak.</span></div>
+  <div id="tut" class="panel" hidden role="dialog" aria-label="Cara bermain">
+    <div class="tn" id="tutN"></div><h3 id="tutT"></h3><ul id="tutB"></ul>
+    <div id="tutNav"><button id="tutSkip" class="ghost" type="button">Lewati</button><span id="tutDots"></span><button id="tutBack" class="ghost" type="button">Kembali</button><button id="tutNext" class="go" type="button">Lanjut</button></div>
+  </div>
+  <div id="tmod" class="panel" hidden><div id="tmHead"><b id="tmTitle"></b><button id="tmClose" class="ghost" type="button">Tutup</button></div><div id="tmBody"></div></div>
+  <div id="ctl" class="panel" hidden>
+    <div class="kicker">Kode game</div><div id="ctlCode"></div><div id="ctlInfo"></div>
+    <div class="row2" style="margin-bottom:8px">
+      <label>Durasi<select id="cfgPlay"><option value="10">10 menit</option><option value="15">15 menit</option><option value="20">20 menit</option><option value="30">30 menit</option><option value="40">40 menit</option><option value="45">45 menit</option><option value="60" selected>60 menit</option></select></label>
+      <label>Target soal<select id="cfgGoal"><option value="0">Tanpa target</option><option value="20">20 soal</option><option value="30">30 soal</option><option value="50" selected>50 soal</option><option value="75">75 soal</option><option value="100">100 soal</option></select></label></div>
+    <button id="ctlStart" class="go" type="button" style="width:100%">Mulai game</button>
+    <div class="row2" style="margin-top:8px"><button id="ctlPause" class="ghost" type="button">Jeda</button><button id="ctlRep" class="ghost" type="button">Laporan</button></div>
+    <div class="row2" style="margin-top:8px"><button id="ctlPl" class="ghost" type="button">Kelola pemain</button><button id="ctlQb" class="ghost" type="button">Bank soal</button></div>
+    <button id="ctlStop" class="ghost" type="button" style="width:100%;margin-top:8px">Akhiri &amp; kembali menunggu</button>
+  </div>
+
+  <div id="quiz" hidden>
+    <div id="qcard" role="dialog" aria-modal="true" aria-labelledby="qtext">
+      <div id="qhead"><span id="qkind">Tantangan Soal</span><span id="qhp"></span></div>
+      <div id="qtime"><i></i></div>
+      <p id="qtext"></p>
+      <div id="qopts"></div>
+      <div id="qres" hidden></div>
+      <button id="qnext" class="go" hidden>Lanjut bertempur</button>
+    </div>
+  </div>
+
+  <div id="result" hidden>
+    <div id="rcard" class="panel">
+      <span class="kicker">Ronde selesai</span>
+      <div id="rwin"></div>
+      <div id="rnext"></div>
+      <div id="rgrid"><div><h4>PERINGKAT TIM</h4><div id="rteams"></div></div><div><h4>PEMAIN TERBAIK</h4><div id="rplayers"></div></div></div>
+    </div>
+  </div>
+
+  <div id="lobby">
+    <div id="lobIn">
+      <div>
+        <div class="kicker">Mode Pemburu · 5 tim × 7 siswa</div>
+        <h1>Arena <em>Flowchart</em></h1>
+        <p class="lead">Lima tim saling memburu: setiap tim adalah pemburu sekaligus buruan bagi semua tim lain. Berlindunglah di balik karung pasir dan batu, jongkok, merangkak atau tiarap di semak belukar agar tidak terlihat, lalu jawab soal flowchart untuk isi peluru. Tim yang habis lebih dulu, dia yang kalah. Game berakhir saat waktu habis, tinggal satu tim, atau (jika diaktifkan guru) sebuah tim mencapai target soal.</p>
+        <ul class="rules">
+          <li><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="none" stroke="#ff4d6d" stroke-width="2.5"/><circle cx="14" cy="14" r="3" fill="#ff4d6d"/></svg><span>Tembak <b>semua tim lain</b> (+5 poin per KO). Kamu juga bisa ditembak semua tim lain, kecuali teman satu tim. Tiap pemain punya <b>5 nyawa</b>.</span></li>
+          <li><svg viewBox="0 0 28 28"><rect x="4" y="5" width="20" height="18" rx="3" fill="none" stroke="#38e1ff" stroke-width="2.5"/><text x="14" y="20" text-anchor="middle" font-size="15" font-weight="700" fill="#38e1ff" font-family="sans-serif">?</text></svg><span>Peluru habis? Jawab soal: benar <b>+30 poin</b>, amunisi penuh, dan perisai 4 detik. Di Zona Soal tengah arena, poinnya <b>×2</b> dan kamu dapat <b>+1 nyawa</b>.</span></li>
+          <li><svg viewBox="0 0 28 28"><path d="M14 3 25 14 14 25 3 14Z" fill="none" stroke="#ffc233" stroke-width="2.5"/></svg><span>Semua anggota kehabisan nyawa = tim <b>tersingkir</b>. Tim yang habis paling awal <b>kalah</b>. Pemain yang nyawanya habis <b>tidak bisa hidup lagi</b>, tetapi bisa menjawab soal untuk <b>mengisi amunisi kawan satu tim</b>.</span></li>
+        </ul>
+      </div>
+      <div id="codeBox" class="panel" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+        <label for="gc" style="font:600 11px var(--display);letter-spacing:.16em;color:var(--mute);text-transform:uppercase">Kode game dari guru</label>
+        <input id="gc" maxlength="5" placeholder="ABCDE" autocomplete="off">
+        <button id="gcGo" class="go" type="button">Lanjut</button>
+        <div class="row2"><button id="soloBtn2" class="ghost" type="button">Latihan solo + bot</button><button id="teachBtn" class="ghost" type="button">Saya guru</button></div>
+        <button id="howBtn" class="ghost" type="button">Cara bermain</button>
+        <div id="gcMsg" class="lead" style="font-size:13px;margin:0;min-height:18px"></div>
+      </div>
+      <form id="form" class="panel" autocomplete="off" hidden>
+        <div><label for="nm">Nama kamu</label><input id="nm" maxlength="14" placeholder="Contoh: Rina" required></div>
+        <div><label>Tim</label><div id="tpick"></div></div>
+        <button id="goBtn" class="go" type="submit">Masuk Arena</button>
+        <div class="row2">
+          <button id="specBtn" class="ghost" type="button">Layar Kelas (proyektor)</button>
+          <button id="soloBtn" class="ghost" type="button">Latihan solo + bot</button>
+        </div>
+        <div id="phoneTip" class="lead" style="font-size:13px;margin:0">Main di HP: putar ke mode landscape (layar melebar). Geser jempol kiri untuk berjalan, geser jempol kanan untuk membidik dan menembak.</div>
+        <div id="lstat">Menghubungkan ke ruang permainan…</div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const QS=[{"q": "Apa yang dimaksud dengan flowchart (diagram alir) dalam konteks pemrograman dan algoritma?", "o": ["Bahasa pemrograman tingkat tinggi yang digunakan untuk membangun aplikasi web.", "Bagian dari perangkat keras komputer yang berfungsi memproses instruksi logika.", "Representasi visual atau grafis dari langkah-langkah penyelesaian masalah/algoritma.", "Kode program yang disajikan dalam bentuk teks terstruktur tanpa grafik.", "Dokumen tertulis yang berisi aturan tata bahasa sintaksis pemrograman."], "a": 2, "e": "Flowchart adalah gambaran secara grafik/visual dari langkah-langkah dan urutan-urutan prosedur dari suatu program/algoritma."}, {"q": "Simbol flowchart yang digunakan untuk menandai titik awal (Start) dan titik akhir (End) dari sebuah alur program adalah...", "o": ["Persegi panjang (Process)", "Oval / Oval Membulat (Terminator)", "Belah ketupat (Decision)", "Jajar genjang (Input/Output)", "Lingkaran (Connector)"], "a": 1, "e": "Simbol Terminator bertipe oval/capsule berfungsi untuk menyatakan awal (Start) atau akhir (End) dari sebuah flowchart."}, {"q": "Bentuk geometri yang digunakan untuk menggambarkan proses masukan (input) atau keluaran (output) data secara umum adalah...", "o": ["Jajar genjang", "Persegi panjang", "Belah ketupat", "Lingkaran kecil", "Segi enam (Hexagon)"], "a": 0, "e": "Jajar genjang mewakili operasi Input (seperti membaca data dari keyboard) atau Output (menampilkan data ke layar/printer)."}, {"q": "Simbol belah ketupat (Decision) dalam flowchart berfungsi untuk...", "o": ["Menghubungkan alur pada halaman yang berbeda.", "Menggambarkan proses perhitungan aritmatika dan penugasan variabel.", "Menentukan keputusan/percabangan berdasarkan kondisi tertentu (Ya/Tidak).", "Memulai dan mengakhiri jalannya algoritma.", "Menampilkan dokumen hasil cetakan ke printer."], "a": 2, "e": "Simbol Decision (belah ketupat) digunakan untuk evaluasi kondisi bernilai benar (True/Ya) atau salah (False/Tidak) guna menentukan jalur alur berikutnya."}, {"q": "Untuk menggambarkan operasi pengolahan data, seperti perhitungan aritmatika (misal: Luas = p * l) atau penugasan variabel, simbol yang digunakan adalah...", "o": ["Oval", "Belah ketupat", "Persegi panjang", "Jajar genjang", "Segi enam"], "a": 2, "e": "Persegi panjang merepresentasikan simbol Process, yaitu tempat terjadinya pemrosesan data, kalkulasi aritmatika, atau inisialisasi."}, {"q": "Apabila sebuah flowchart sangat panjang dan harus menyambung alur pada halaman yang sama, simbol penyambung yang tepat adalah...", "o": ["Off-page Connector (Pentagon/Pita)", "On-page Connector (Lingkaran kecil)", "Arrow Line (Garis alir)", "Hexagon (Preparation)", "Document Symbol"], "a": 1, "e": "On-page Connector berbentuk lingkaran kecil digunakan untuk menyambungkan alur proses dalam satu halaman yang sama agar tidak melintas garis berantakan."}, {"q": "Simbol Off-page Connector berbentuk seperti pentagon/segi lima meruncing bawah digunakan untuk...", "o": ["Menghubungkan alur program yang terputus di halaman yang berbeda.", "Menghubungkan alur di posisi yang sama dalam satu halaman.", "Melakukan perulangan otomatis (For-Loop).", "Menandai masukan data secara manual dari keyboard.", "Menandai keluaran berupa file basis data."], "a": 0, "e": "Off-page Connector digunakan jika flowchart membutuhkan lebih dari satu halaman kertas, berfungsi menyambung alur antar halaman."}, {"q": "Simbol segi enam (Hexagon) dalam perancangan flowchart umumnya digunakan untuk fungsi...", "o": ["Input Data Manual", "Preparation (Inisialisasi atau penyiapan variabel/nilai awal)", "Display (Menampilkan ke layar monitor)", "Subroutine (Memanggil fungsi/prosedur)", "Storan data disk magnetik"], "a": 1, "e": "Simbol Hexagon melambangkan Preparation, yaitu tahap penyiapan ruang memori, pemberian nilai awal (inisialisasi), atau penentuan indeks perulangan."}, {"q": "Garis alir (Flowline) yang dilengkapi arah panah berfungsi untuk...", "o": ["Menyimpan data sementara di dalam RAM.", "Menunjukkan alur logika atau urutan eksekusi antar simbol.", "Menghitung jumlah baris program.", "Menandai bahwa program mengalami kesalahan (error).", "Menghubungkan komputer dengan jaringan."], "a": 1, "e": "Flowline menunjukkan aliran atau arah jalannya proses dari satu langkah ke langkah berikutnya secara terurut."}, {"q": "Siapa organisasi standar internasional yang menerbitkan standar bentuk simbol-simbol flowchart yang umum digunakan secara global?", "o": ["IEEE & ACM", "ANSI & ISO", "W3C & IETF", "Google & Microsoft", "UNESCO & UNICEF"], "a": 1, "e": "Standar simbol flowchart sebagian besar ditetapkan oleh ANSI (American National Standards Institute) dan ISO (International Organization for Standardization)."}, {"q": "Berikut ini yang BUKAN merupakan tiga struktur dasar algoritma/flowchart adalah...", "o": ["Struktur Runtunan (Sequential)", "Struktur Pemilihan/Percabangan (Selection/Branching)", "Struktur Perulangan (Repetition/Looping)", "Struktur Acak (Randomization/Chaos)", "Jawaban A, B, dan C benar"], "a": 3, "e": "Tiga struktur dasar algoritma standar adalah Sequence (runtunan), Selection (percabangan), dan Repetition/Looping (perulangan)."}, {"q": "Flowchart yang menggambarkan alur fisik berkas, dokumen, dan arus surat dalam suatu organisasi disebut...", "o": ["Program Flowchart", "Document / Paperwork Flowchart", "System Flowchart", "Process Flowchart", "Schematic Flowchart"], "a": 1, "e": "Document Flowchart (Flowchart Dokumen/Borang) difokuskan untuk menelusuri alur dokumen fisik, formulir, atau laporan antar departemen."}, {"q": "Flowchart yang menjelaskan secara terperinci setiap langkah logika instruksi di dalam suatu program komputer dinamakan...", "o": ["System Flowchart", "Program Flowchart", "Process Flowchart", "Structural Diagram", "Database Flowchart"], "a": 1, "e": "Program Flowchart merupakan bagan alir yang menggambarkan urutan instruksi rinci bagi pemrogram untuk menyusun kode."}, {"q": "Apa perbedaan utama antara System Flowchart dan Program Flowchart?", "o": ["System flowchart menggambarkan alur kerja sistem secara menyeluruh beserta perangkatnya, sedangkan program flowchart menggambarkan logika mendalam dari satu program.", "System flowchart menggunakan bahasa C, sedangkan program flowchart menggunakan Python.", "System flowchart khusus untuk hardware, sedangkan program flowchart khusus untuk internet.", "System flowchart hanya terdiri dari 1 simbol, sedangkan program flowchart terdiri dari 100 simbol.", "Tidak ada perbedaan sama sekali."], "a": 0, "e": "System flowchart mencakup gambaran makro (sistem, input, storage, output), sedangkan program flowchart mencakup gambaran mikro (logika pemrograman internal)."}, {"q": "Simbol persegi panjang dengan dua garis vertikal tambahan di sisi kiri dan kanannya mewakili...", "o": ["Manual Input", "Predefined Process / Subroutine (Prosedur/Fungsi)", "Internal Storage", "Manual Operation", "Off-page Connector"], "a": 1, "e": "Simbol Predefined Process (Subroutine) digunakan untuk memanggil sub-program, fungsi, atau modul prosedur terpisah."}, {"q": "Simbol berbentuk trapesium terbalik atau segi empat dengan kemiringan tertentu sering digunakan untuk mewakili...", "o": ["Automatic Processing", "Manual Operation (Operasi Manual tanpa komputer)", "Display Monitor", "Magnetic Disk", "Online Storage"], "a": 1, "e": "Trapesium terbalik mengekspresikan Manual Operation, yaitu proses pengolahan yang dilakukan oleh manusia tanpa bantuan mesin/komputer."}, {"q": "Simbol berbentuk trapesium siku-siku melengkung di kanan yang menyerupai kibor digunakan untuk melambangkan...", "o": ["Keyboard / Manual Input", "Card Reader", "Printer Output", "Hard Disk", "Speaker Output"], "a": 0, "e": "Simbol Manual Input melambangkan ketiadaan input otomatis, melainkan masukan langsung dari pengguna melalui papan ketik (keyboard)."}, {"q": "Dalam logika percabangan IF-THEN-ELSE pada flowchart, berapa jumlah garis alir keluaran (outflow) yang HARUS keluar dari simbol Decision?", "o": ["Selalu 1 garis", "Minimal 2 garis (misalnya Ya/Tidak)", "Maksimal 10 garis tanpa batas", "Tidak boleh ada garis keluar", "Tiga garis tanpa arah"], "a": 1, "e": "Simbol Decision menerima 1 garis masuk dan memancarkan minimal 2 garis keluar berdasarkan hasil evaluasi boolean (True/False atau Ya/Tidak)."}, {"q": "Ciri khas dari struktur algoritma Runtunan (Sequence) pada flowchart adalah...", "o": ["Terdapat kondisi belah ketupat yang membalikkan alur ke atas.", "Langkah-langkah dieksekusi secara berurutan dari atas ke bawah tanpa ada lompatan atau perulangan.", "Menggunakan simbol loop hexagon sebanyak 5 kali.", "Alur berjalan secara bersamaan (parallel multi-threading).", "Tidak memerlukan simbol Terminator awal."], "a": 1, "e": "Struktur runtunan adalah alur linier murni: setiap instruksi dijalankan berturut-turut sesuai urutannya dari top-to-bottom."}, {"q": "Manakah pernyataan yang paling benar mengenai penggunaan arah panah pada garis alir flowchart?", "o": ["Arah panah sebaiknya mengalir dari bawah ke atas secara dominan.", "Arah panah standar mengalir dari kiri ke kanan atau dari atas ke bawah.", "Garis alir boleh bersilangan tanpa menggunakan simbol connector.", "Arah panah tidak wajib digunakan dalam flowchart formal.", "Panah harus berwarna merah agar valid."], "a": 1, "e": "Arah standar membaca flowchart adalah dari atas ke bawah (top-down) dan dari kiri ke kanan (left-to-right)."}, {"q": "Diberikan alur flowchart: [Start] -> [Input A, B] -> [C = A + B] -> [Print C] -> [End]. Jika nilai A = 7 dan B = 5, berapakah output C?", "o": ["35", "2", "12", "75", "Error"], "a": 2, "e": "Proses C = A + B memasukkan nilai 7 + 5 = 12, lalu dicetak ke output."}, {"q": "Diberikan alur percabangan: [Input Nilai] -> [Apakah Nilai >= 75?] -> Jika Ya: Cetak 'Lulus', Jika Tidak: Cetak 'Remedial'. Jika Nilai = 75, maka outputnya adalah...", "o": ["Remedial", "Lulus", "Tidak Lulus", "Error", "75"], "a": 1, "e": "Kondisi '75 >= 75' bernilai BENAR (True), maka alur mengambil cabang Ya dan mencetak 'Lulus'."}, {"q": "Perhatikan logika perulangan berikut:\n1. i = 1\n2. Cek apakah i <= 3?\n3. Jika Ya: Cetak i, lalu i = i + 1, kembali ke langkah 2.\n4. Jika Tidak: Selesai.\nBerapa kalakah nilai i dicetak ke layar?", "o": ["1 kali", "2 kali", "3 kali", "4 kali", "0 kali"], "a": 2, "e": "Perulangan berjalan untuk i=1 (Cetak 1), i=2 (Cetak 2), i=3 (Cetak 3). Saat i=4, kondisi 4<=3 bernilai Salah (False) sehingga perulangan berhenti. Total dicetak 3 kali."}, {"q": "Pada perulangan: i = 1; selama i <= 3 cetak i lalu i = i + 1, berapakah nilai akhir dari variabel i setelah keluar dari perulangan?", "o": ["3", "4", "2", "1", "0"], "a": 1, "e": "Nilai i bertambah menjadi 4 pada akhir iterasi ke-3, lalu diuji pada kondisi 4 <= 3 (False), sehingga loop berhenti dengan nilai i = 4."}, {"q": "Istilah kondisi di mana suatu perulangan (looping) dalam flowchart terus berjalan tanpa pernah berhenti karena kondisi keluar tidak pernah terpenuhi dinamakan...", "o": ["Deadlock", "Infinite Loop (Perulangan Tak Terbatas)", "Overflow", "Syntax Error", "Recursion"], "a": 1, "e": "Infinite loop terjadi ketika variabel pengontrol perulangan tidak diubah nilainya atau syarat perhentian tidak pernah tercapai."}, {"q": "Untuk menghitung luas segitiga dengan rumus L = 0.5 * alas * tinggi, simbol apa saja yang minimal HARUS ada dalam flowchart?", "o": ["Terminator, Jajar Genjang (Input alas, tinggi), Persegi Panjang (L = 0.5*a*t), Jajar Genjang (Output L).", "Hanya Belah Ketupat dan Oval.", "Hexagon dan Lingkaran saja.", "Terminator dan Belah Ketupat saja.", "Document dan Manual Operation."], "a": 0, "e": "Struktur lengkapnya: Terminator (Start) -> Input (Jajar genjang) -> Process (Persegi panjang) -> Output (Jajar genjang) -> Terminator (End)."}, {"q": "Kapan penggunaan simbol Predefined Process (Subroutine) sangat disarankan dalam perancangan flowchart?", "o": ["Ketika hanya ada satu baris instruksi input.", "Ketika terdapat kelompok instruksi yang kompleks/rumit yang sering dipanggil berulang kali di berbagai tempat.", "Ketika flowchart dibuat di kertas A4.", "Saat program tidak memiliki percabangan.", "Saat tidak menggunakan variabel."], "a": 1, "e": "Subroutine menyederhanakan bagan alir utama dengan memecah fungsi kompleks ke dalam modul/diagram terpisah (modularitas)."}, {"q": "Manakah di bawah ini yang merupakan contoh penulisan ekspresi kondisi yang BENAR di dalam simbol Decision?", "o": ["Hitung Luas = P * L", "Input Nama Siswa", "Apakah Usia > 17 ?", "Selesai", "x = x + 1"], "a": 2, "e": "Simbol Decision berisi pertanyaan boolean / ekspresi logika yang jawabannya adalah Ya/Tidak atau True/False (contoh: Apakah Usia > 17?)."}, {"q": "Diberikan algoritma: [Input Bilangan N] -> [Sisa = N % 2] -> [Sisa == 0 ?]. Jika Ya cetak 'Genap', Jika Tidak cetak 'Ganjil'. Jika dimasukkan N = 15, hasilnya adalah...", "o": ["Genap", "Ganjil", "Positif", "Nol", "Error"], "a": 1, "e": "15 % 2 (15 dibagi 2 sisa 1). Karena 1 != 0 (Tidak/False), maka alur menuju cabang 'Ganjil'."}, {"q": "Apa akibatnya jika dalam sebuah flowchart percabangan (Decision) hanya memiliki SATU garis keluar?", "o": ["Flowchart menjadi lebih cepat dipahami.", "Terjadi kesalahan logika (invalid), karena simbol keputusan wajib memiliki minimal dua alur keluaran alternatif.", "Komputer akan mengeksekusi dua perintah sekaligus.", "Program akan otomatis terhapus.", "Tidak berpengaruh apa-apa."], "a": 1, "e": "Simbol keputusan bertujuan memilih alur berdasarkan kondisi. Jika garis keluar hanya satu, simbol tersebut kehilangan fungsinya sebagai penentu keputusan."}, {"q": "Manakah pasangan antara Pseudocode dan bentuk simbol Flowchart yang TIDAK sesuai?", "o": ["INPUT Angka -> Simbol Jajar Genjang", "PRINT Hasil -> Simbol Jajar Genjang", "IF x > 5 THEN -> Simbol Belah Ketupat", "total = a + b -> Simbol Persegi Panjang", "START -> Simbol Hexagon"], "a": 4, "e": "START harus menggunakan simbol Terminator (Oval), bukan Hexagon (Preparation)."}, {"q": "Salah satu kelebihan utama dari penyajian algoritma menggunakan Flowchart dibandingkan teks biasa adalah...", "o": ["Ukuran file komputer menjadi jauh lebih kecil.", "Mudah dipahami secara visual karena alur logika ditunjukkan dengan standar simbol dan arah panah yang jelas.", "Dapat langsung dijalankan oleh prosesor tanpa perlu di-compile.", "Bebas dari semua bentuk kesalahan logika.", "Membutuhkan waktu pembuatan yang selalu lebih singkat daripada pseudocode."], "a": 1, "e": "Kelebihan utama flowchart adalah kejelasan visual (visual clarity) dalam menggambarkan alur logika kerja."}, {"q": "Kelemahan atau keterbatasan dari penggunaan flowchart untuk program yang sangat besar dan kompleks adalah...", "o": ["Tidak memiliki simbol untuk Start dan End.", "Menjadi sangat rumit, memakan banyak halaman, dan sulit dimodifikasi jika ada perubahan logika.", "Tidak diakui oleh organisasi internasional.", "Hanya bisa dipakai untuk bahasa pemrograman Pascal.", "Tidak bisa digambar di komputer."], "a": 1, "e": "Untuk aplikasi skala besar, bagan alir dapat menjadi sangat besar ('spaghetti flowchart') sehingga membingungkan dan sulit diperbarui."}, {"q": "Perhatikan potongan logika flowchart berikut:\n[X = 10] -> [Y = 20] -> [Temp = X] -> [X = Y] -> [Y = Temp]\nProses di atas berfungsi untuk...", "o": ["Menjumlahkan nilai X dan Y.", "Mengalikan nilai X dan Y.", "Mempertukarkan (swapping) nilai antara variabel X dan variabel Y.", "Mencari nilai terbesar antara X dan Y.", "Mengosongkan nilai X dan Y."], "a": 2, "e": "Algoritma penampung sementara (Temp) digunakan untuk menukar nilai dua variabel. Hasil akhir: X = 20 dan Y = 10."}, {"q": "Simbol flowchart mana yang paling cocok digunakan untuk merepresentasikan perintah membaca data dari sebuah file basis data di Hard Disk?", "o": ["Direct Access Storage / Magnetic Disk (Simbol Silinder/Tabung)", "Keyboard Symbol", "Terminator Symbol", "Decision Symbol", "Connector Symbol"], "a": 0, "e": "Simbol silinder/tabung (Magnetic Disk) melambangkan media penyimpanan data sekunder/basis data."}, {"q": "Dalam flowchart sistem, simbol yang menggambarkan keluaran yang langsung dicetak ke kertas cetakan disebut...", "o": ["Display Symbol", "Document Symbol (Simbol Kertas bergambar gelombang bawah)", "Manual Input", "Online Storage", "Card Reader"], "a": 1, "e": "Document Symbol (berbentuk persegi dengan sisi bawah bergelombang) melambangkan dokumen fisik atau hardcopy printout."}, {"q": "Apabila dalam sebuah percabangan kompleks terdapat 3 buah kondisi bertingkat (Nested IF), berapa jumlah simbol Decision yang dibutuhkan?", "o": ["1", "2", "3", "4", "6"], "a": 2, "e": "Setiap uji kondisi independen memerlukan 1 buah simbol Decision. Jika ada 3 kondisi bertingkat, dibutuhkan 3 simbol Decision."}, {"q": "Di antara aturan pembuatan flowchart berikut, manakah aturan yang SALAH?", "o": ["Flowchart harus dimulai dengan simbol Start dan diakhiri simbol End.", "Setiap simbol proses harus memiliki garis alir masuk dan garis alir keluar.", "Garis alir boleh terputus begitu saja tanpa penanda connector.", "Kata-kata di dalam simbol harus singkat, padat, dan jelas.", "Alur secara umum berjalan dari atas ke bawah."], "a": 2, "e": "Garis alir TIDAK boleh terputus tanpa penyambung. Jika terputus/pindah halaman, wajib menggunakan Connector."}, {"q": "Simbol berbentuk layar monitor (Display) digunakan spesifik apabila keluaran data ditampilkan pada...", "o": ["Kertas Printer", "Layar Monitor / CRT / LCD", "Pita Magnetik", "File PDF", "Microfilm"], "a": 1, "e": "Simbol Display khusus merepresentasikan output visual yang dikirim langsung ke layar monitor."}, {"q": "Perhatikan alur: [A = 5] -> [B = 2] -> [A = A * B] -> [B = A - B] -> [Cetak A, B]. Nilai A dan B yang dicetak berturut-turut adalah...", "o": ["10 dan 8", "5 dan 2", "10 dan 10", "7 dan 3", "10 dan 2"], "a": 0, "e": "1. A = 5, B = 2.\n2. A = 5 * 2 = 10.\n3. B = 10 - 2 = 8.\nOutput: A = 10, B = 8."}, {"q": "Manakah urutan simbol yang BENAR untuk membuat flowchart menentukan apakah sebuah angka bernilai Positif atau Negatif (asumsi angka != 0)?", "o": ["Start -> Process -> Decision -> Input -> End", "Start -> Input Angka -> Decision (Angka > 0?) -> Branch Ya (Cetak Positif) / Tidak (Cetak Negatif) -> End", "Start -> Decision -> Output -> Process -> End", "Start -> Preparation -> End", "Start -> Output -> Input -> End"], "a": 1, "e": "Urutan logis: Mula (Start) -> Masukkan data -> Uji kondisi (Decision) -> Hasil cabang -> Selesai (End)."}, {"q": "Struktur perulangan WHILE-DO dalam flowchart ditandai dengan...", "o": ["Pengujian kondisi dilakukan di AWAL sebelum badan perulangan dijalankan.", "Pengujian kondisi dilakukan di AKHIR setelah badan perulangan dijalankan.", "Tidak membutuhkan simbol Decision.", "Tidak bisa dihentikan.", "Menggunakan simbol Document."], "a": 0, "e": "WHILE-DO mengevaluasi kondisi di depan (pre-test loop). Jika kondisi False sejak awal, badan perulangan tidak dieksekusi sama sekali."}, {"q": "Sebaliknya, struktur perulangan DO-WHILE / REPEAT-UNTIL dalam flowchart ditandai dengan...", "o": ["Pengujian kondisi dilakukan di AKHIR (post-test loop), sehingga badan perulangan pasti dieksekusi minimal 1 kali.", "Pengujian kondisi dilakukan di awal.", "Eksekusi dilakukan sebanyak 0 kali jika kondisi bernilai salah.", "Menggunakan simbol jajar genjang saja.", "Tidak memerlukan panah kembali."], "a": 0, "e": "DO-WHILE mengevaluasi kondisi di belakang (post-test loop), menjamin minimal 1 kali eksekusi terjadi."}, {"q": "Diberikan algoritma flowchart untuk mencari diskon:\n- Total Belanja > 100.000 -> Diskon = 10%\n- Lainnya -> Diskon = 0%\nJika Pembeli belanja sebesar 100.000 tepat, berapa diskon yang diperoleh?", "o": ["10%", "0%", "5%", "10.000", "Error"], "a": 1, "e": "Syaratnya adalah strictly 'Total > 100000'. Angka 100000 tidak lebih besar dari 100000 (False), maka dapat Diskon 0%."}, {"q": "Simbol 'Internal Storage' dalam flowchart melambangkan...", "o": ["Data yang disimpan di dalam memori utama (RAM) komputer.", "File yang disimpan di Google Drive.", "Cetakan kertas dalam lemari arsip.", "Flashdisk eksternal.", "Kartu berlubang (Punch card)."], "a": 0, "e": "Internal Storage melambangkan memori akses acak utama (RAM) berkecepatan tinggi di dalam sistem."}, {"q": "Dalam bahasa pemrograman, flowchart sering diterjemahkan terlebih dahulu ke dalam bentuk teks terstruktur yang menyerupai kode asli namun tidak terikat sintaks ketat. Teks terstruktur ini disebut...", "o": ["Compiler", "Pseudocode", "HTML", "Assembly", "Flowchart Text"], "a": 1, "e": "Pseudocode (kode semu) adalah deskripsi informal tingkat tinggi dari algoritma pemrograman yang mudah dibaca manusia."}, {"q": "Pada bagan alir pencarian data (Searching), simbol Decision digunakan untuk mengevaluasi kondisi...", "o": ["Apakah data yang dicari sama dengan data pada indeks saat ini?", "Berapa harga komputer?", "Siapa pembuat program?", "Berapa jumlah kertas tersisa?", "Apakah warna layar sudah biru?"], "a": 0, "e": "Logika pencarian membandingkan elemen target dengan elemen koleksi (Apakah Data[i] == Target?)."}, {"q": "Perhatikan alur perulangan:\n[Count = 0] -> [Count = Count + 2] -> [Count > 5 ?]\n- Jika Tidak: Kembali ke [Count = Count + 2]\n- Jika Ya: Cetak Count.\nBerapa nilai Count yang dicetak?", "o": ["4", "5", "6", "8", "2"], "a": 2, "e": "Iterasi 1: Count = 0 + 2 = 2. Cek (2 > 5) -> Tidak.\nIterasi 2: Count = 2 + 2 = 4. Cek (4 > 5) -> Tidak.\nIterasi 3: Count = 4 + 2 = 6. Cek (6 > 5) -> Ya!\nKeluar loop dan cetak Count = 6."}, {"q": "Tujuan dari melakukan 'Dry Run' atau 'Desk Check' pada sebuah flowchart adalah...", "o": ["Menghapus gambar flowchart dari komputer.", "Menelusuri logika flowchart secara manual menggunakan sampel data kertas/pensil sebelum dikoding untuk memastikan kebenarannya.", "Mencetak flowchart ke dalam media kertas hVS.", "Mengubah warna simbol flowchart.", "Menjual flowchart ke klien."], "a": 1, "e": "Desk check / Dry run adalah teknik penelusuran manual langkah demi langkah memakai variabel sampel untuk mendeteksi bug logika."}, {"q": "Manakah kesimpulan yang paling tepat mengenai peranan Flowchart dalam siklus pengembangan perangkat lunak (SDLC)?", "o": ["Flowchart tidak berguna sama sekali di era modern.", "Flowchart berfungsi sebagai alat komunikasi visual, perancangan logika, analisis sistem, serta dokumentasi standar sebelum dan sesudah tahap koding.", "Flowchart hanya wajib digunakan oleh administrator basis data.", "Flowchart menggantikan peran bahasa pemrograman.", "Flowchart dibuat otomatis oleh prosesor tanpa campur tangan manusia."], "a": 1, "e": "Flowchart sangat berharga sebagai alat analisis, desain logika, media diskusi antar tim, serta bahan dokumentasi sistem."}];
+(()=>{
+'use strict';
+const _rn=Date.now.bind(Date);let OFF=0;Date.now=()=>_rn()+OFF; // jam disamakan dengan server
+/* ====== Konstanta ====== */
+const W=2400,H=1600,CX=W/2,CY=H/2,R=20,M=96,ZONE_R=150,BASE_R=130;
+let PLAY_SEC=60*60,QGOAL=50,CYC=0;const READY_SEC=15,RES_SEC=30,LIVES=5,KP=5;
+function setCfg(p,g){PLAY_SEC=p*60;QGOAL=g;CYC=(READY_SEC+PLAY_SEC+RES_SEC)*1000}setCfg(60,50);
+const MAXHP=100,DMG=25,MAXAMMO=15,BSPEED=820,BLIFE=1.0,SPEED=265,FIRE_CD=0.26;
+const TEAMS=[
+ {n:'Terminator',sym:'oval',c:'#ff4d4d'},
+ {n:'Decision',sym:'diamond',c:'#3ea6ff'},
+ {n:'Process',sym:'rect',c:'#f4f6f8'},
+ {n:'Input/Output',sym:'para',c:'#ffd23a'},
+ {n:'Connector',sym:'circle',c:'#b57bff'}];
+const BASES=[0,1,2,3,4].map(k=>{const a=(-90+72*k)*Math.PI/180;return {x:CX+900*Math.cos(a),y:CY+580*Math.sin(a)}});
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const LS=(a,s)=>{const i=Math.min(2,Math.max(0,Math.floor(s))),f=clamp(s-i,0,1);return a[i]+(a[i+1]-a[i])*f};const STN=['Berdiri','Jongkok','Merangkak','Tiarap'];
+const TAU=Math.PI*2;
+
+/* ====== Peta: dinding tetap (benih sama di semua perangkat) ====== */
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const walls=[];
+(function(){
+  const rnd=rng(20241);
+  [[-260,-180],[260,-180],[-260,180],[260,180]].forEach(([dx,dy])=>walls.push({x:CX+dx-50,y:CY+dy-50,w:100,h:100}));
+  const distRect=(px,py,r)=>{const nx=clamp(px,r.x,r.x+r.w),ny=clamp(py,r.y,r.y+r.h);return Math.hypot(px-nx,py-ny)};
+  let tries=0;
+  while(walls.length<26&&tries++<2000){
+    const horiz=rnd()<.5,L=90+rnd()*190,T=44+rnd()*30;
+    const w=horiz?L:T,h=horiz?T:L;
+    const x=110+rnd()*(W-220-w),y=110+rnd()*(H-220-h);
+    const r={x,y,w,h};
+    if(BASES.some(b=>distRect(b.x,b.y,r)<BASE_R+110))continue;
+    if(distRect(CX,CY,r)<ZONE_R+110)continue;
+    if(walls.some(o=>x<o.x+o.w+90&&x+w+90>o.x&&y<o.y+o.h+90&&y+h+90>o.y))continue;
+    walls.push(r);
+  }
+  const tr=rng(99);
+  walls.forEach((w,i)=>{w.seed=Math.floor(tr()*1e6);const ratio=Math.max(w.w,w.h)/Math.min(w.w,w.h);w.k=i<4?'rock':ratio>2.3?(tr()<.6?'log':'hedge'):(tr()<.55?'rock':'hedge')});
+})();
+function hitsWall(x,y,rad){
+  for(const r of walls){const nx=clamp(x,r.x,r.x+r.w),ny=clamp(y,r.y,r.y+r.h);if((x-nx)**2+(y-ny)**2<rad*rad)return true}
+  return false;
+}
+
+/* ====== Semak belukar (tempat bersembunyi) dan bangkai berasap ====== */
+const SMK=[];(function(){const r=rng(88);let t=0;while(SMK.length<6&&t++<500){const x=200+r()*(W-400),y=260+r()*(H-420);if(BASES.some(b=>Math.hypot(b.x-x,b.y-y)<BASE_R+90)||Math.hypot(CX-x,CY-y)<ZONE_R+100||walls.some(w=>x>w.x-60&&x<w.x+w.w+60&&y>w.y-60&&y<w.y+w.h+60))continue;SMK.push({x,y,o:r()})}})();
+const bushes=[];(function(){const r=rng(777);let t=0;while(bushes.length<24&&t++<4000){const rad=52+r()*38,x=140+r()*(W-280),y=140+r()*(H-280);
+  if(BASES.some(b=>Math.hypot(b.x-x,b.y-y)<BASE_R+rad+30)||Math.hypot(CX-x,CY-y)<ZONE_R+rad+40)continue;
+  if(walls.some(w=>Math.hypot(x-clamp(x,w.x,w.x+w.w),y-clamp(y,w.y,w.y+w.h))<rad+20))continue;
+  if(SMK.some(e=>Math.hypot(e.x-x,e.y-y)<rad+90)||bushes.some(o=>Math.hypot(o.x-x,o.y-y)<o.r+rad+40))continue;
+  bushes.push({x,y,r:rad,seed:Math.floor(r()*1e6),cv:0})}})();
+function bushAt(x,y){for(const b of bushes)if((x-b.x)**2+(y-b.y)**2<(b.r*.82)**2)return b;return null}
+function mkBush(b){
+  const s=b.r+26,k=document.createElement('canvas');k.width=k.height=Math.ceil(s*2);const c=k.getContext('2d'),r=rng(b.seed);c.translate(s,s);
+  c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(6,9,b.r,b.r*.9,0,0,TAU);c.fill();
+  const cols=['#1a2612','#263a18','#35501f','#476a2a','#5d8236'];
+  for(let q=0;q<5;q++){c.fillStyle=cols[q];for(let i=0;i<16-q*2;i++){const a=r()*TAU,d=Math.sqrt(r())*b.r*(.78-q*.08);c.beginPath();c.arc(Math.cos(a)*d,Math.sin(a)*d,b.r*(.26+r()*.14)*(1-q*.1),0,TAU);c.fill()}}
+  c.lineWidth=2;for(let i=0;i<70;i++){const a=r()*TAU,d=Math.sqrt(r())*b.r*.85,x=Math.cos(a)*d,y=Math.sin(a)*d;c.strokeStyle=r()<.5?'rgba(120,160,70,.55)':'rgba(15,28,10,.6)';c.beginPath();c.moveTo(x,y);c.lineTo(x+(r()-.5)*16,y+(r()-.5)*16);c.stroke()}
+  return k;
+}
+
+/* ====== Simbol flowchart ====== */
+function symPath(c,sym,x,y,r){
+  c.beginPath();
+  if(sym==='oval')c.ellipse(x,y,r*1.2,r*.86,0,0,TAU);
+  else if(sym==='diamond'){c.moveTo(x,y-r*1.15);c.lineTo(x+r*1.15,y);c.lineTo(x,y+r*1.15);c.lineTo(x-r*1.15,y);c.closePath()}
+  else if(sym==='rect'){const w=r*1.05,h=r*.85,k=r*.2;c.roundRect?c.roundRect(x-w,y-h,w*2,h*2,k):c.rect(x-w,y-h,w*2,h*2)}
+  else if(sym==='para'){const w=r*1.1,h=r*.82,s=r*.45;c.moveTo(x-w+s,y-h);c.lineTo(x+w+s,y-h);c.lineTo(x+w-s,y+h);c.lineTo(x-w-s,y+h);c.closePath()}
+  else c.arc(x,y,r*.95,0,TAU);
+}
+function symSvg(sym,col){
+  const s={oval:'<ellipse cx="20" cy="20" rx="17" ry="11"/>',diamond:'<polygon points="20,3 37,20 20,37 3,20"/>',rect:'<rect x="5" y="9" width="30" height="22" rx="3"/>',para:'<polygon points="11,9 37,9 29,31 3,31"/>',circle:'<circle cx="20" cy="20" r="14"/>'}[sym];
+  return `<svg viewBox="0 0 40 40" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="2.5">${s}</svg>`;
+}
+
+/* ====== Lapisan statis arena ====== */
+const SS=matchMedia('(pointer:coarse)').matches?1:1.5;let staticCv=null;
+const SKIN=['#f1c9a1','#e0ac7e','#c68a5b','#a46a43','#7a4a2c'];
+function hashS(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)}
+function smoothPoly(c,pts){
+  const n=pts.length,mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  let m=mid(pts[n-1],pts[0]);c.beginPath();c.moveTo(m[0],m[1]);
+  for(let i=0;i<n;i++){const p=pts[i],q=mid(p,pts[(i+1)%n]);c.quadraticCurveTo(p[0],p[1],q[0],q[1])}
+  c.closePath();
+}
+function drawRock(c,x,y,w,h,seed){
+  const r=rng(seed),cx=x+w/2,cy=y+h/2,a=w/2,b=h/2,N=16,pts=[];
+  for(let i=0;i<N;i++){const t=i/N*TAU,ca=Math.cos(t),sa=Math.sin(t),k=.9+r()*.16;
+    pts.push([cx+Math.sign(ca)*Math.pow(Math.abs(ca),.5)*a*k,cy+Math.sign(sa)*Math.pow(Math.abs(sa),.5)*b*k])}
+  c.save();c.translate(10,12);c.fillStyle='rgba(0,0,0,.42)';smoothPoly(c,pts);c.fill();c.restore();
+  c.save();c.translate(-4,-8);
+  const g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'#b4bbbf');g.addColorStop(.5,'#7d858b');g.addColorStop(1,'#464d54');
+  c.fillStyle=g;smoothPoly(c,pts);c.fill();c.lineWidth=2.5;c.strokeStyle='#2b3137';c.stroke();
+  c.save();smoothPoly(c,pts);c.clip();
+  for(let i=0;i<6;i++){const p=pts[Math.floor(r()*N)];c.strokeStyle=r()<.5?'rgba(255,255,255,.14)':'rgba(0,0,0,.28)';c.lineWidth=2+r()*2;c.beginPath();c.moveTo(cx+(r()-.5)*a*.4,cy+(r()-.5)*b*.4);c.lineTo(p[0],p[1]);c.stroke()}
+  c.fillStyle='rgba(255,255,255,.16)';c.beginPath();c.ellipse(cx-a*.3,cy-b*.4,a*.35,b*.2,-.4,0,TAU);c.fill();
+  for(let i=0;i<6;i++){const mx=x+r()*w,my=y+r()*h*.55;c.fillStyle=`rgba(${70+r()*30|0},${130+r()*40|0},${50+r()*30|0},.8)`;c.beginPath();c.ellipse(mx,my,8+r()*18,5+r()*10,r()*3,0,TAU);c.fill()}
+  c.restore();c.restore();
+}
+function drawHedge(c,x,y,w,h,seed){
+  const r=rng(seed),bw=28,bh=16,cols=['#a89a68','#9a8c5e','#b9aa7a','#8d7f55'];
+  c.save();c.translate(9,11);c.fillStyle='rgba(0,0,0,.42)';c.fillRect(x,y,w,h);c.restore();
+  c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.fillStyle='#5d5236';c.fillRect(x,y,w,h);
+  for(let row=0,gy=y-4;gy<y+h;row++,gy+=bh*.78){for(let gx=x-(row%2?bw/2:0)-4;gx<x+w;gx+=bw-2){
+    const g=c.createLinearGradient(0,gy,0,gy+bh);g.addColorStop(0,'rgba(255,245,200,.25)');g.addColorStop(1,'rgba(0,0,0,.3)');
+    c.fillStyle=cols[Math.floor(r()*4)];c.beginPath();c.roundRect?c.roundRect(gx,gy,bw,bh,7):c.rect(gx,gy,bw,bh);c.fill();c.fillStyle=g;c.fill();c.strokeStyle='rgba(40,30,15,.7)';c.lineWidth=1.6;c.stroke();
+    c.strokeStyle='rgba(60,45,20,.45)';c.lineWidth=1;c.beginPath();c.moveTo(gx+bw*.3,gy+bh*.5);c.lineTo(gx+bw*.7,gy+bh*.5);c.stroke()}}
+  c.restore();c.strokeStyle='rgba(30,22,10,.8)';c.lineWidth=2.5;c.strokeRect(x,y,w,h);
+}
+function warDecor(c){
+  const r=rng(31);
+  for(let i=0,n=0;i<500&&n<18;i++){const x=120+r()*(W-240),y=120+r()*(H-240),rad=24+r()*34;
+    if(BASES.some(b=>Math.hypot(b.x-x,b.y-y)<BASE_R+rad+40)||Math.hypot(CX-x,CY-y)<ZONE_R+rad+40)continue;n++;
+    let g=c.createRadialGradient(x,y,rad*.3,x,y,rad*2);g.addColorStop(0,'rgba(18,12,6,.7)');g.addColorStop(1,'rgba(18,12,6,0)');c.fillStyle=g;c.beginPath();c.arc(x,y,rad*2,0,TAU);c.fill();
+    g=c.createRadialGradient(x+rad*.2,y+rad*.2,rad*.1,x,y,rad);g.addColorStop(0,'#17100a');g.addColorStop(.8,'#3a2d1b');g.addColorStop(1,'#7a6644');c.fillStyle=g;c.beginPath();c.ellipse(x,y,rad,rad*.8,0,0,TAU);c.fill();c.strokeStyle='rgba(135,112,76,.8)';c.lineWidth=3;c.stroke();
+    for(let k=0;k<9;k++){const a=r()*TAU,d=rad*(1.1+r()*.8);c.fillStyle='rgba(78,62,40,.85)';c.beginPath();c.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,2+r()*4,0,TAU);c.fill()}}
+  for(const e of SMK){const g=c.createRadialGradient(e.x,e.y,4,e.x,e.y,70);g.addColorStop(0,'rgba(10,8,5,.9)');g.addColorStop(1,'rgba(10,8,5,0)');c.fillStyle=g;c.beginPath();c.arc(e.x,e.y,70,0,TAU);c.fill();
+    c.fillStyle='#2a2a2c';c.fillRect(e.x-26,e.y-12,52,24);c.fillStyle='#3a2a20';c.fillRect(e.x-18,e.y-8,22,16);c.fillStyle='rgba(255,120,30,.8)';for(let k=0;k<5;k++){c.beginPath();c.arc(e.x-20+r()*40,e.y-10+r()*20,2+r()*2,0,TAU);c.fill()}}
+  for(let i=0,n=0;i<400&&n<7;i++){const x=200+r()*(W-500),y=200+r()*(H-400),a=r()*Math.PI,L=170+r()*110,x2=x+Math.cos(a)*L,y2=y+Math.sin(a)*L;
+    if(BASES.some(b=>Math.hypot(b.x-x,b.y-y)<BASE_R+120||Math.hypot(b.x-x2,b.y-y2)<BASE_R+120)||Math.hypot(CX-x,CY-y)<ZONE_R+150||Math.hypot(CX-x2,CY-y2)<ZONE_R+150)continue;n++;
+    c.lineCap='round';
+    for(let q=0;q<2;q++){c.strokeStyle=q?'rgba(30,30,30,.9)':'rgba(150,150,145,.7)';c.lineWidth=q?2.4:1.2;c.beginPath();c.moveTo(x,y);for(let k=1;k<=12;k++){const u=k/12;c.lineTo(x+(x2-x)*u+Math.sin(k*2+q)*5,y+(y2-y)*u+Math.cos(k*2)*5)}c.stroke()}
+    for(let k=0;k<=6;k++){const u=k/6,px=x+(x2-x)*u,py=y+(y2-y)*u;c.fillStyle='#3a2a1a';c.fillRect(px-3,py-3,6,6);c.strokeStyle='rgba(20,20,20,.9)';c.lineWidth=1.5;c.strokeRect(px-3,py-3,6,6)}}
+}
+function drawLog(c,x,y,w,h,seed){
+  const r=rng(seed),horiz=w>=h,L=Math.max(w,h),T=Math.min(w,h);
+  c.save();c.translate(10,12);c.fillStyle='rgba(0,0,0,.4)';c.beginPath();c.roundRect?c.roundRect(x,y,w,h,T*.45):c.rect(x,y,w,h);c.fill();c.restore();
+  c.save();c.translate(x+w/2-4,y+h/2-7);if(!horiz)c.rotate(Math.PI/2);
+  const g=c.createLinearGradient(0,-T/2,0,T/2);g.addColorStop(0,'#a06b3c');g.addColorStop(.5,'#7a4d2a');g.addColorStop(1,'#4d2f19');
+  c.fillStyle=g;c.beginPath();c.roundRect?c.roundRect(-L/2,-T/2,L,T,T*.42):c.rect(-L/2,-T/2,L,T);c.fill();c.lineWidth=2.5;c.strokeStyle='#2c1a0e';c.stroke();
+  c.strokeStyle='rgba(30,15,5,.35)';c.lineWidth=2;
+  for(let i=0;i<7;i++){const yy=-T/2+T*(i+1)/8;c.beginPath();c.moveTo(-L/2+T*.4,yy);c.lineTo(L/2-T*.4,yy+(r()-.5)*4);c.stroke()}
+  for(const s of[-1,1]){const ex=s*(L/2-T*.3);c.fillStyle='#d9b27a';c.beginPath();c.ellipse(ex,0,T*.26,T*.42,0,0,TAU);c.fill();c.strokeStyle='#8a5e33';c.lineWidth=1.5;
+    for(let k=1;k<=3;k++){c.beginPath();c.ellipse(ex,0,T*.26*k/3.2,T*.42*k/3.2,0,0,TAU);c.stroke()}}
+  for(let i=0;i<4;i++){c.fillStyle='rgba(84,150,60,.85)';c.beginPath();c.ellipse((r()-.5)*(L-T),-T/2+4+r()*6,10+r()*14,4+r()*4,0,0,TAU);c.fill()}
+  c.restore();
+}
+function drawTree(c,x,y,rad,r){
+  c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.arc(x+14,y+16,rad,0,TAU);c.fill();
+  const cols=['#141c0e','#1f2c14','#2b3b1a','#3a4d22'];
+  cols.forEach((col,i)=>{c.fillStyle=col;const k=1-i*.16;
+    for(let j=0;j<7;j++){const a=r()*TAU,d=rad*.4*r();c.beginPath();c.arc(x+Math.cos(a)*d-i*3,y+Math.sin(a)*d-i*4,rad*k*(.55+r()*.25),0,TAU);c.fill()}});
+}
+function renderStatic(){
+  const cv=document.createElement('canvas');cv.width=W*SS;cv.height=H*SS;
+  const c=cv.getContext('2d');c.scale(SS,SS);
+  const rnd=rng(7);
+  // Tanah hutan
+  let g=c.createRadialGradient(CX,CY,100,CX,CY,1500);g.addColorStop(0,'#6a6440');g.addColorStop(.6,'#554f33');g.addColorStop(1,'#2e2a1b');
+  c.fillStyle=g;c.fillRect(0,0,W,H);
+  const blob=['rgba(140,120,70,.14)','rgba(60,45,25,.2)','rgba(110,120,60,.10)','rgba(30,24,14,.22)'];
+  for(let i=0;i<430;i++){const x=rnd()*W,y=rnd()*H,r=40+rnd()*150,bg=c.createRadialGradient(x,y,0,x,y,r);const col=blob[i%4];bg.addColorStop(0,col);bg.addColorStop(1,col.replace(/[\d.]+\)$/,'0)'));c.fillStyle=bg;c.fillRect(x-r,y-r,r*2,r*2)}
+  // Jalan tanah dari tiap markas ke tengah
+  BASES.forEach((b,i)=>{
+    const ang=Math.atan2(CY-b.y,CX-b.x),side=i%2?1:-1,mx=(b.x+CX)/2+Math.cos(ang+Math.PI/2)*130*side,my=(b.y+CY)/2+Math.sin(ang+Math.PI/2)*130*side;
+    for(const [lw,col] of[[58,'rgba(92,66,40,.55)'],[40,'rgba(132,100,64,.6)'],[22,'rgba(160,128,86,.45)']]){c.strokeStyle=col;c.lineWidth=lw;c.lineCap='round';c.beginPath();c.moveTo(b.x,b.y);c.quadraticCurveTo(mx,my,CX,CY);c.stroke()}
+  });
+  // Rumput, bunga, daun, kerikil
+  const gcol=['#7a8340','#5f6e34','#9a9650','#4d5b2a'];
+  for(let i=0;i<2600;i++){const x=rnd()*W,y=rnd()*H;c.strokeStyle=gcol[i%4];c.lineWidth=1.6;c.beginPath();for(let k=-1;k<=1;k++){c.moveTo(x+k*3,y);c.lineTo(x+k*5+(rnd()-.5)*4,y-7-rnd()*8)}c.stroke()}
+  warDecor(c);
+  for(let i=0;i<150;i++){const x=rnd()*W,y=rnd()*H;c.strokeStyle=i%2?'#4f5f2a':'#66752f';c.lineWidth=2.4;c.lineCap='round';for(let k=0;k<7;k++){const a=-Math.PI/2+(k-3)*.42;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+Math.cos(a)*14,y+Math.sin(a)*14-4,x+Math.cos(a)*24,y+Math.sin(a)*24+(Math.abs(k-3)*3))
+    c.stroke()}}
+  for(let i=0;i<260;i++){const x=rnd()*W,y=rnd()*H;c.fillStyle=['rgba(150,150,145,.7)','rgba(190,120,50,.7)','rgba(210,170,60,.65)'][i%3];c.beginPath();c.ellipse(x,y,3+rnd()*4,2+rnd()*3,rnd()*3,0,TAU);c.fill()}
+  // Markas: tanah lapang dengan lingkar batu
+  c.textAlign='center';c.textBaseline='middle';
+  BASES.forEach((b,i)=>{
+    const t=TEAMS[i];
+    g=c.createRadialGradient(b.x,b.y,10,b.x,b.y,BASE_R+30);g.addColorStop(0,'rgba(140,108,70,.85)');g.addColorStop(.8,'rgba(110,84,52,.7)');g.addColorStop(1,'rgba(110,84,52,0)');
+    c.fillStyle=g;c.beginPath();c.arc(b.x,b.y,BASE_R+30,0,TAU);c.fill();
+    c.fillStyle=t.c+'26';c.beginPath();c.arc(b.x,b.y,BASE_R,0,TAU);c.fill();
+    for(let k=0;k<26;k++){const a=k/26*TAU,rr=8+rnd()*8;drawRock(c,b.x+Math.cos(a)*(BASE_R+4)-rr,b.y+Math.sin(a)*(BASE_R+4)-rr,rr*2,rr*1.7,1000+i*40+k)}
+    c.strokeStyle=t.c;c.lineWidth=5;c.shadowColor=t.c;c.shadowBlur=16;c.beginPath();c.arc(b.x,b.y,BASE_R-12,0,TAU);c.stroke();c.shadowBlur=0;
+    c.globalAlpha=.4;c.fillStyle=t.c;symPath(c,t.sym,b.x,b.y-4,58);c.fill();c.globalAlpha=1;
+    const label='TIM '+t.n.toUpperCase();c.font='700 16px "Chakra Petch",sans-serif';const tw=c.measureText(label).width+28,ly=b.y+BASE_R-34;
+    c.fillStyle='#5a3a20';c.beginPath();c.roundRect?c.roundRect(b.x-tw/2,ly-14,tw,28,6):c.rect(b.x-tw/2,ly-14,tw,28);c.fill();c.strokeStyle='#2b1a0c';c.lineWidth=2;c.stroke();
+    c.fillStyle='#fff';c.fillText(label,b.x,ly+1);
+  });
+  // Zona Soal: lingkar batu kuno bercahaya
+  g=c.createRadialGradient(CX,CY,10,CX,CY,ZONE_R+20);g.addColorStop(0,'rgba(40,150,170,.55)');g.addColorStop(.85,'rgba(20,80,100,.35)');g.addColorStop(1,'rgba(20,80,100,0)');
+  c.fillStyle=g;c.beginPath();c.arc(CX,CY,ZONE_R+20,0,TAU);c.fill();
+  c.strokeStyle='rgba(120,240,255,.85)';c.lineWidth=3;c.shadowColor='#38e1ff';c.shadowBlur=18;c.beginPath();c.arc(CX,CY,ZONE_R-4,0,TAU);c.stroke();c.shadowBlur=0;
+  for(let k=0;k<14;k++){const a=k/14*TAU+.1;drawRock(c,CX+Math.cos(a)*(ZONE_R+10)-15,CY+Math.sin(a)*(ZONE_R+10)-20,30,40,2000+k)}
+  c.fillStyle='rgba(150,245,255,.95)';c.font='700 78px "Chakra Petch",sans-serif';c.fillText('?',CX,CY-6);
+  c.font='700 15px "Chakra Petch",sans-serif';c.fillText('ZONA SOAL · POIN ×2',CX,CY+62);
+  // Tempat berlindung
+  for(const r of walls){if(r.k==='hedge')drawHedge(c,r.x,r.y,r.w,r.h,r.seed);else if(r.k==='log')drawLog(c,r.x,r.y,r.w,r.h,r.seed);else drawRock(c,r.x,r.y,r.w,r.h,r.seed)}
+  // Pohon di tepi arena
+  const tr=rng(55);
+  for(const row of[10,44]){
+    for(let x=-10;x<W+60;x+=48+tr()*12){drawTree(c,x,row+(tr()-.5)*10,38+tr()*20,tr);drawTree(c,x+20,H-row+(tr()-.5)*10,38+tr()*20,tr)}
+    for(let y=60;y<H-50;y+=48+tr()*12){drawTree(c,row+(tr()-.5)*10,y,38+tr()*20,tr);drawTree(c,W-row+(tr()-.5)*10,y,38+tr()*20,tr)}
+  }
+  // Cahaya matahari dan vinyet
+  c.globalCompositeOperation='lighter';
+  for(let i=0;i<6;i++){const x=200+i*420;const lg=c.createLinearGradient(x,0,x+300,H);lg.addColorStop(0,'rgba(255,240,170,.07)');lg.addColorStop(1,'rgba(255,240,170,0)');c.fillStyle=lg;c.beginPath();c.moveTo(x,0);c.lineTo(x+120,0);c.lineTo(x+520,H);c.lineTo(x+330,H);c.fill()}
+  c.globalCompositeOperation='source-over';
+  g=c.createRadialGradient(CX,CY,500,CX,CY,1500);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,10,4,.5)');c.fillStyle=g;c.fillRect(0,0,W,H);
+  staticCv=cv;
+}
+
+/* ====== Waktu ronde ====== */
+function roundInfo(now){
+  if(GS.status==='wait')return{r:GS.r,phase:'wait',left:0};
+  const t=(GS.status==='pause'?GS.pausedAt:now)-GS.startAt,r=GS.r;
+  if(t<READY_SEC*1000)return{r,phase:'ready',left:READY_SEC-t/1000};
+  if(t<(READY_SEC+PLAY_SEC)*1000)return{r,phase:'play',left:READY_SEC+PLAY_SEC-t/1000};
+  return{r,phase:'result',left:Math.max(0,(CYC-t)/1000)};
+}
+
+/* ====== Status ====== */
+let room=null,roomKind='none',mode='lobby';
+const me={name:'',team:0,x:0,y:0,a:0,hp:MAXHP,alive:true,ammo:MAXAMMO,shield:0,respawn:0,fireCd:0,shotN:0,shots:[],kc:{},qp:0,quizCd:0,peer:null,flash:0,lastKills:0,lives:5,qa:0,sup:0,el:0,w:0,out:false,late:false,st:0,stf:0,fireT:0,bk:0};
+let cur={r:-1,phase:'play',left:0};
+const bullets=[],parts=[],floats=[],feedL=[];
+const recs=new Map();let others=[];
+let scores={rows:[],ts:[0,0,0,0,0],tc:[0,0,0,0,0]};
+let GS={status:'wait',startAt:0,r:0};
+let G={stand:[0,0,0,0,0],part:[0,0,0,0,0],out:[0,0,0,0,0],lives:[0,0,0,0,0],over:false,rank:[]};
+let quiz=null,deck=[],deckI=0,shake=0,audioOn=true;
+const input={up:0,dn:0,lf:0,rt:0,fire:false,mx:0,my:0,mouse:false,tx:0,ty:0,ax:0,ay:0,aimTouch:false};
+const cam={x:CX,y:CY,sc:1};
+let vw=0,vh=0,dpr=1;
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const mini=$('#mini'),mctx=mini.getContext('2d');
+
+function inBase(x,y,t){const b=BASES[t];return (x-b.x)**2+(y-b.y)**2<BASE_R*BASE_R}
+function spawnPos(t){const b=BASES[t],a=Math.random()*TAU,d=20+Math.random()*70;return{x:b.x+Math.cos(a)*d,y:b.y+Math.sin(a)*d}}
+const P=patch=>{if(room)room.presence(patch).catch(()=>{})};
+
+/* ====== Suara ====== */
+let ac=null;
+function sfx(k){
+  if(!audioOn)return;
+  try{
+    ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+    const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);
+    const S={shoot:['sawtooth',420,70,.09,.05],hit:['sawtooth',200,60,.16,.07],ko:['sine',300,900,.25,.08],ok:['sine',520,1040,.28,.09],bad:['triangle',220,90,.3,.09],click:['square',120,100,.04,.04],boom:['sawtooth',70,25,.7,.1]}[k];
+    o.type=S[0];o.frequency.setValueAtTime(S[1],t);o.frequency.exponentialRampToValueAtTime(S[2],t+S[3]);
+    g.gain.setValueAtTime(S[4],t);g.gain.exponentialRampToValueAtTime(.0001,t+S[3]+.02);o.start(t);o.stop(t+S[3]+.03);
+  }catch{}
+}
+
+/* ====== Ruang lokal (latihan solo dengan bot) ====== */
+function makeLocalRoom(){
+  const names=['Raka','Sinta','Budi','Dewi','Andi','Maya','Fajar','Lina','Joko','Rani','Tomi','Putri'];
+  GS={status:'run',startAt:Date.now(),r:1};const my={},bots=[];
+  names.forEach((n,i)=>{
+    const t=i%5,s=spawnPos(t);
+    bots.push({id:'bot'+i,n,t,x:s.x,y:s.y,a:0,hp:MAXHP,al:1,sh:0,qz:0,r:0,lv:5,el:0,kc:{},qp:0,s:[],i:0,cd:Math.random(),tx:CX,ty:CY,retarget:0,resp:0,sg:0,st:0});
+  });
+  const view=b=>({peer:b.id,by:null,isMe:false,sameTab:false,kind:'viewer',guest:false,updatedAt:0,presence:{n:b.n,t:b.t,x:Math.round(b.x),y:Math.round(b.y),a:Math.round(b.a*100)/100,hp:b.hp,al:b.al,sh:b.sh>0?1:0,qz:0,r:b.r,lv:b.lv,qa:0,el:b.el,w:0,kc:Object.assign({},b.kc),qp:b.qp,s:b.s.slice(-3),st:b.st}});
+  const botBy=id=>bots.find(b=>b.id===id);
+  setInterval(()=>{
+    const dt=.05,ri=roundInfo(Date.now());
+    for(const b of bots){
+      if(b.r!==ri.r){b.r=ri.r;b.kc={};b.qp=0;b.hp=MAXHP;b.al=1;b.lv=LIVES;b.el=0;const s=spawnPos(b.t);b.x=s.x;b.y=s.y}
+      if(ri.phase!=='play')continue;
+      if(!b.al){b.resp-=dt;if(b.resp<=0){b.al=1;b.hp=MAXHP;const s=spawnPos(b.t);b.x=s.x;b.y=s.y;b.sh=2.5}continue}
+      b.sh=Math.max(0,b.sh-dt);b.cd-=dt;b.retarget-=dt;
+      let near=null,nd=1e9;
+      const cands=others.filter(o=>canHit(b.t,o.team)&&o.al).concat(mode==='player'&&me.alive&&canHit(b.t,me.team)?[{x:me.x,y:me.y,team:me.team}]:[]);
+      for(const o of cands){if(o.team===b.t)continue;const d=Math.hypot(o.x-b.x,o.y-b.y);if(d<nd){nd=d;near=o}}
+      if(b.retarget<=0){b.retarget=1.2+Math.random()*2;b.st=Math.random()<.4?0:1+(Math.random()*3|0);if(near&&nd<700){b.tx=near.x+(Math.random()-.5)*300;b.ty=near.y+(Math.random()-.5)*300}else{b.tx=200+Math.random()*(W-400);b.ty=200+Math.random()*(H-400)}}
+      const dx=b.tx-b.x,dy=b.ty-b.y,dd=Math.hypot(dx,dy)||1;
+      if(dd>20){const sp=190*dt*[1,.65,.45,.25][b.st|0],nx=b.x+dx/dd*sp,ny=b.y+dy/dd*sp;if(!hitsWall(nx,b.y,R))b.x=nx;else b.retarget=0;if(!hitsWall(b.x,ny,R))b.y=ny;else b.retarget=0}
+      b.x=clamp(b.x,M,W-M);b.y=clamp(b.y,M,H-M);
+      if(near){b.a=Math.atan2(near.y-b.y,near.x-b.x);
+        if(nd<650&&b.cd<=0){b.cd=.7+Math.random()*.8;b.i++;const a=b.a+(Math.random()-.5)*.35;b.s.push({i:b.i,x:Math.round(b.x),y:Math.round(b.y),a:Math.round(a*100)/100});if(b.s.length>3)b.s.shift()}}
+    }
+  },50);
+  return{
+    simulated:true,
+    presence(patch){Object.assign(my,patch);return Promise.resolve()},
+    peers(){return[{peer:'me-local',by:null,isMe:true,sameTab:true,kind:'viewer',guest:false,updatedAt:0,presence:my}].concat(bots.map(view))},
+    connected:()=>true,
+    hitHook(b,peerId){
+      const bot=botBy(peerId);if(!bot||!bot.al||bot.sh>0||!canHit(b.t,bot.t))return;
+      bot.hp-=DMG;
+      if(bot.hp<=0){bot.al=0;bot.resp=3;bot.lv--;if(bot.lv<=0){bot.lv=0;bot.el=Date.now();bot.resp=1e9}bot.kc[b.o]=(bot.kc[b.o]||0)+1}
+    }
+  };
+}
+
+/* ====== Peers ====== */
+function nrm(pr){
+  return{n:String(pr.n||'?').slice(0,14),t:clamp(pr.t|0,0,4),x:+pr.x||0,y:+pr.y||0,a:+pr.a||0,hp:clamp(+pr.hp||0,0,MAXHP),al:pr.al?1:0,sh:pr.sh?1:0,qz:pr.qz?1:0,r:pr.r|0,kc:(pr.kc&&typeof pr.kc==='object')?pr.kc:{},qp:clamp(+pr.qp||0,0,99999),s:Array.isArray(pr.s)?pr.s.slice(0,3):[],lv:clamp(pr.lv|0,0,9),qa:clamp(pr.qa|0,0,999),el:+pr.el||0,w:pr.w?1:0,st:clamp(pr.st|0,0,3),bk:clamp(pr.bk|0,0,9999)};
+}
+function pushFeed(text,col){feedL.push({text,col,t:performance.now()});if(feedL.length>5)feedL.shift()}
+function syncPeers(dt){
+  if(!room)return;
+  const list=room.peers(),seen=new Set(),out=[];
+  for(const p of list){
+    if(p.kind!=='viewer')continue;
+    if(p.isMe){if(p.sameTab)me.peer=p.peer;continue}
+    const pr=p.presence;if(!pr||pr.sp||pr.t===undefined||pr.x===undefined)continue;
+    const d=nrm(pr);seen.add(p.peer);
+    let rec=recs.get(p.peer);
+    if(!rec){rec={id:p.peer,x:d.x,y:d.y,a:d.a,lastShot:d.s.reduce((m,s)=>Math.max(m,s.i|0),0),prevAl:d.al,prevKc:d.kc,shield:0};recs.set(p.peer,rec)}
+    // Tembakan baru
+    for(const s of d.s){
+      const i=s.i|0;
+      if(i>rec.lastShot){rec.lastShot=i;rec.fireT=performance.now();rec.rev=rec.fireT+1400;spawnBullet(+s.x||d.x,+s.y||d.y,+s.a||0,p.peer,d.t,.05);sfxNear(d.x,d.y)}
+    }
+    // Siaran kematian
+    if(rec.prevAl&&!d.al){
+      let killer=null;
+      for(const k in d.kc)if((d.kc[k]|0)>((rec.prevKc[k]|0)))killer=k;
+      const kn=killer===me.peer?me.name:(recs.get(killer)?.name||'Seseorang');
+      if(rec.x||rec.y)burst(rec.x,rec.y,TEAMS[d.t].c,26);
+      pushFeed(`${kn} ▸ ${d.n}`,TEAMS[recs.get(killer)?.team??(killer===me.peer?me.team:d.t)].c);
+    }
+    rec.prevAl=d.al;rec.prevKc=d.kc;
+    rec.name=d.n;rec.team=d.t;rec.hp=d.hp;rec.al=d.al;rec.sh=d.sh;rec.qz=d.qz;rec.r=d.r;rec.kc=d.kc;rec.qp=d.qp;rec.lv=d.lv;rec.qa=d.qa;if(rec.pbk!=null&&d.bk>rec.pbk&&mode==='player'&&d.t===me.team&&me.alive&&!me.out&&d.r===cur.r){me.ammo=Math.min(MAXAMMO,me.ammo+6);toast(d.n+' mengisi amunisimu (+6)');sfx('ok');pushNow()}rec.pbk=d.bk;rec.el=d.el;rec.w=d.w;rec.st=d.st;rec.stf=rec.stf==null?d.st:rec.stf+(d.st-rec.stf)*(1-Math.exp(-dt*9));
+    rec.tx=d.x;rec.ty=d.y;
+    const k=1-Math.exp(-dt*14);
+    const ox=rec.x,oy=rec.y;
+    if(Math.hypot(rec.tx-rec.x,rec.ty-rec.y)>350){rec.x=rec.tx;rec.y=rec.ty}else{rec.x+=(rec.tx-rec.x)*k;rec.y+=(rec.ty-rec.y)*k}
+    rec.ph=(rec.ph||0)+Math.hypot(rec.x-ox,rec.y-oy)/12;
+    let da=d.a-rec.a;da=Math.atan2(Math.sin(da),Math.cos(da));rec.a+=da*k;
+    out.push(rec);
+  }
+  for(const id of recs.keys())if(!seen.has(id))recs.delete(id);
+  others=out;
+}
+function sfxNear(x,y){if(mode==='player'&&Math.hypot(x-me.x,y-me.y)<600)sfx('shoot')}
+
+/* ====== Peluru ====== */
+function spawnBullet(x,y,a,o,t,adv){
+  const b={x:x+Math.cos(a)*26,y:y+Math.sin(a)*26,vx:Math.cos(a)*BSPEED,vy:Math.sin(a)*BSPEED,life:BLIFE,o,t};
+  b.x+=b.vx*(adv||0);b.y+=b.vy*(adv||0);b.life-=adv||0;bullets.push(b);parts.push({x:x,y:y,vx:Math.cos(a+1.6)*110,vy:Math.sin(a+1.6)*110,life:.45,max:.45,c:'#d8b45a',r:1.7});
+}
+function burst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*TAU,s=60+Math.random()*320;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.5+Math.random()*.4,max:.9,c:col,r:2+Math.random()*3})}}
+function float(x,y,text,c){floats.push({x,y,text,c,t:0})}
+
+function updateBullets(dt){
+  const play=cur.phase==='play';
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];
+    b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+    let dead=b.life<=0||b.x<60||b.x>W-60||b.y<60||b.y>H-60;
+    if(!dead&&hitsWall(b.x,b.y,3)){dead=true;burst(b.x,b.y,'#c9b48a',7)}
+    if(!dead&&mode==='player'&&me.alive&&canHit(b.t,me.team)&&(b.x-me.x)**2+(b.y-me.y)**2<LS([24,19,14,11],me.stf)**2){
+      dead=true;
+      if(play&&me.shield<=0)hitMe(b);else{burst(b.x,b.y,'#38e1ff',6)}
+    }
+    if(!dead){
+      for(const o of others){
+        if(!o.al||!canHit(b.t,o.team)||o.id===b.o)continue;
+        if((b.x-o.x)**2+(b.y-o.y)**2<LS([24,19,14,11],o.stf==null?(o.st|0):o.stf)**2){
+          dead=true;burst(b.x,b.y,TEAMS[o.team].c,6);
+          room&&room.hitHook&&room.hitHook(b,o.id);
+          break;
+        }
+      }
+    }
+    if(dead)bullets.splice(i,1);
+  }
+}
+function hitMe(b){
+  me.hp-=DMG;me.flash=.35;shake=Math.max(shake,6);sfx('hit');burst(me.x,me.y,'#ff4d6d',10);
+  if(me.hp<=0){
+    me.hp=0;me.alive=false;me.respawn=3;me.lives--;if(me.lives<=0){me.lives=0;me.out=true;me.el=Date.now()}
+    me.kc[b.o]=(me.kc[b.o]||0)+1;
+    burst(me.x,me.y,TEAMS[me.team].c,40);shake=14;sfx('ko');
+    const kn=recs.get(b.o)?.name||'Seseorang';
+    pushFeed(`${kn} ▸ ${me.name}`,TEAMS[recs.get(b.o)?.team??0].c);
+    pushNow();
+  }
+}
+
+/* ====== Mode Pemburu: rantai buruan, nyawa, tim tersingkir ====== */
+let lockPart=[0,0,0,0,0],lockR=-9,prevOut=[0,0,0,0,0];const outAt=[0,0,0,0,0],deadT=[0,0,0,0,0];
+function tgt(t){for(let k=1;k<5;k++){const u=(t+k)%5;if(G.stand[u])return u}return -1}
+function hnt(t){for(let k=1;k<5;k++){const u=(t+5-k)%5;if(G.stand[u])return u}return -1}
+function canHit(a,b){return cur.phase==='play'&&!G.over&&a!==b&&!!G.stand[a]&&!!G.stand[b]}
+function roleOf(t){return 0}
+function computeTeams(){
+  const n=[0,0,0,0,0],al=[0,0,0,0,0],lv=[0,0,0,0,0],el=[0,0,0,0,0],qa=[0,0,0,0,0];
+  const add=(t,l,e,w,q)=>{if(w)return;qa[t]+=q|0;n[t]++;if(l>0)al[t]++;lv[t]+=l;if(e>el[t])el[t]=e};
+  for(const o of others)if(o.r===cur.r)add(o.team,o.lv,o.el,o.w,o.qa);
+  if(mode==='player')add(me.team,me.lives,me.el,me.w,me.qa);
+  const ready=cur.phase==='ready'||cur.phase==='wait';let fresh=false;
+  if(ready||lockR!==cur.r){lockPart=n.map(x=>x>0?1:0);lockR=cur.r;outAt.fill(0);deadT.fill(0);prevOut=[0,0,0,0,0];fresh=!ready}else if(!prevOut.some(x=>x)&&!G.over){for(let t=0;t<5;t++)if(n[t]>0)lockPart[t]=1}
+  const out=[0,0,0,0,0],stand=[0,0,0,0,0];
+  for(let t=0;t<5;t++){if(!lockPart[t])continue;out[t]=(deadT[t]||(!ready&&al[t]===0))?1:0;if(out[t])deadT[t]=1;stand[t]=out[t]?0:1;if(out[t]&&!outAt[t])outAt[t]=el[t]||Date.now()}
+  const pc=lockPart.reduce((s,x)=>s+x,0),alive=stand.reduce((s,x)=>s+x,0);
+  const idx=[0,1,2,3,4].filter(t=>lockPart[t]);
+  idx.sort((a,b)=>(out[a]-out[b])||(out[a]?(outAt[b]-outAt[a]):((scores.ts[b]-scores.ts[a])||(lv[b]-lv[a]))));
+  if(cur.phase==='play'&&!fresh)for(let t=0;t<5;t++)if(out[t]&&!prevOut[t]){pushFeed(`Tim ${TEAMS[t].n} habis!`,TEAMS[t].c);toast('Tim '+TEAMS[t].n+' tersingkir!');sfx('ko')}
+  prevOut=out.slice();
+  G={stand,part:lockPart,out,lives:lv,qa,over:!ready&&pc>=2&&(alive<=1||(QGOAL>0&&lockPart.some((p,t)=>p&&qa[t]>=QGOAL))),rank:idx};
+}
+function updMission(){
+  const tg=tgt(me.team),hn=hnt(me.team),tn=t=>t>=0?`<b style="color:${TEAMS[t].c}">Tim ${TEAMS[t].n}</b>`:'<b>-</b>';
+  const lv=Math.max(0,me.lives);
+  $('#mission').innerHTML=`<span style="color:#ff6b81">${'♥'.repeat(lv)}${'♡'.repeat(LIVES-lv)}</span><br>Buru semua tim lain:<br>${TEAMS.map((x,i)=>(G.stand[i]&&i!==me.team)?tn(i):'').filter(Boolean).join(' · ')||'<b>-</b>'}`;
+}
+
+/* ====== Poin ====== */
+function computeScores(){
+  const kills={};
+  const addKc=kc=>{for(const k in kc)kills[k]=(kills[k]||0)+(kc[k]|0)};
+  for(const o of others)if(o.r===cur.r)addKc(o.kc);
+  addKc(me.kc);
+  const rows=[],ts=[0,0,0,0,0],tc=[0,0,0,0,0],tq=[0,0,0,0,0],tk=[0,0,0,0,0];
+  if(mode==='player'&&me.peer){const k=kills[me.peer]|0;rows.push({id:me.peer,name:me.name,team:me.team,kills:k,qp:me.qp,score:k*KP+me.qp,me:true})}
+  for(const o of others){const k=kills[o.id]|0,qp=o.r===cur.r?o.qp:0;rows.push({id:o.id,name:o.name,team:o.team,kills:k,qp,score:k*KP+qp,me:false})}
+  for(const r of rows){ts[r.team]+=r.score;tc[r.team]++;tq[r.team]+=r.qp;tk[r.team]+=r.kills*KP}
+  rows.sort((a,b)=>b.score-a.score);
+  const mine=rows.find(r=>r.me);
+  if(mine){if(mine.kills>me.lastKills){float(me.x,me.y-60,'+'+KP+' KO!',TEAMS[me.team].c);sfx('ko');if(mine.kills-me.lastKills===1)toast('Kamu menembak jatuh lawan! +'+KP)}me.lastKills=mine.kills}
+  scores={rows,ts,tc,tq,tk};
+}
+
+/* ====== Kirim presence ====== */
+let lastSent='',lastSendT=0;
+function buildPatch(){
+  return{n:me.name,t:me.team,x:Math.round(me.x),y:Math.round(me.y),a:Math.round(me.a*100)/100,hp:Math.max(0,Math.round(me.hp)),al:me.alive?1:0,sh:me.shield>0?1:0,qz:quiz&&!quiz.done?1:0,r:cur.r,kc:me.kc,qp:me.qp,s:me.shots,lv:me.lives,qa:me.qa,el:me.el,w:me.w?1:0,st:me.st|0,bk:me.bk|0};
+}
+function pushNow(){
+  if(mode!=='player'||!room)return;
+  const p=buildPatch(),j=JSON.stringify(p),now=performance.now();
+  if(j===lastSent&&now-lastSendT<1000)return;
+  lastSent=j;lastSendT=now;P(p);
+}
+setInterval(()=>{if(mode==='player')pushNow()},110);
+
+/* ====== Soal ====== */
+function shuffleDeck(){deck=QS.map((_,i)=>i);for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}deckI=0}
+function inZone(){return(me.x-CX)**2+(me.y-CY)**2<ZONE_R*ZONE_R}
+const SUPNEED=3;let specI=0;
+function revive(){me.out=false;me.lives=1;me.alive=true;me.hp=MAXHP;me.ammo=MAXAMMO;me.shield=3;me.el=0;me.sup=0;const s=spawnPos(me.team);me.x=s.x;me.y=s.y;cam.x=me.x;cam.y=me.y;toast('Kamu bangkit! Kembali dengan 1 nyawa');pushNow()}
+function specTarget(){
+  if(mode==='player'&&me.out){const al=others.filter(o=>o.team===me.team&&o.al);if(al.length)return al[specI%al.length]}
+  return me;
+}
+function canQuiz(zone){
+  if(mode!=='player'||cur.phase!=='play'||quiz||me.w||G.over||GS.status==='pause')return 'no';
+  if(me.out){if(G.out[me.team])return 'no';return me.quizCd>0?'cd':'ok'}
+  if(me.quizCd>0)return 'cd';
+  if(zone)return inZone()?'ok':'nozone';
+  return me.ammo<=5?'ok':'full';
+}
+function tryQuiz(zone){
+  const c=canQuiz(zone);
+  if(c==='cd')return toast('Tunggu '+Math.ceil(me.quizCd)+' detik untuk soal berikutnya');
+  if(c==='full')return toast('Amunisi masih cukup. Soal terbuka saat peluru tinggal 5, atau masuk Zona Soal.');
+  if(c==='nozone')return toast('Masuk lingkaran Zona Soal di tengah arena dulu');
+  if(c!=='ok')return;
+  if(deckI>=deck.length)shuffleDeck();
+  const idx=deck[deckI++];
+  quiz={qi:idx,q:QS[idx],zone:!me.out&&inZone(),end:performance.now()+30000,done:false};
+  $('#qkind').textContent=me.out?'Bantu Tim · isi amunisi kawan':quiz.zone?'Tantangan Zona · poin ×2':'Isi Amunisi';
+  $('#qtext').textContent=quiz.q.q;
+  const box=$('#qopts');box.textContent='';
+  quiz.q.o.forEach((t,i)=>{
+    const b=document.createElement('button');b.className='qo';b.type='button';
+    const l=document.createElement('i');l.textContent='ABCDE'[i];const s=document.createElement('span');s.textContent=t;
+    b.append(l,s);b.onclick=()=>answer(i);box.append(b);
+  });
+  $('#qres').hidden=true;$('#qnext').hidden=true;$('#quiz').hidden=false;
+  input.up=input.dn=input.lf=input.rt=0;input.fire=false;
+  pushNow();sfx('click');
+}
+function answer(i){
+  if(!quiz||quiz.done)return;
+  quiz.done=true;
+  const q=quiz.q,ok=i===q.a;me.qa++;if(room&&room.ans)room.ans(quiz.q.q.slice(0,200),ok,me.name,me.team);
+  [...$('#qopts').children].forEach((b,k)=>{b.disabled=true;if(k===q.a)b.classList.add('right');else if(k===i)b.classList.add('wrong')});
+  const res=$('#qres');res.hidden=false;res.className=ok?'ok':'bad';res.textContent='';
+  const h=document.createElement('h3'),p=document.createElement('div');
+  if(ok&&me.out){
+    me.bk++;me.qp+=10;
+    h.textContent='Benar! Amunisi kawan satu tim terisi (+6 peluru, +10 poin)';sfx('ok');
+  }else if(ok){
+    const pts=quiz.zone?60:30;me.qp+=pts;me.ammo=MAXAMMO;me.shield=Math.max(me.shield,4);
+    h.textContent=`Benar! +${pts} poin, amunisi penuh, perisai 4 detik`+((quiz.zone&&me.lives>0&&me.lives<LIVES&&++me.lives)?' · +1 nyawa':'');sfx('ok');float(me.x,me.y-60,'+'+pts,'#38e1ff');
+  }else{
+    if(!me.out)me.ammo=Math.min(MAXAMMO,me.ammo+3);
+    h.textContent=(i<0?'Waktu habis. ':'Belum tepat. ')+`Jawaban: ${'ABCDE'[q.a]}`+(me.out?'. Coba soal berikutnya untuk membantu timmu':'. Amunisi +3');sfx('bad');
+  }
+  p.textContent=q.e;res.append(h,p);
+  me.quizCd=6;
+  const n=$('#qnext');n.hidden=false;n.focus();
+  pushNow();
+}
+function closeQuiz(){quiz=null;$('#quiz').hidden=true;pushNow()}
+$('#qnext').onclick=closeQuiz;
+
+/* ====== Input ====== */
+addEventListener('keydown',e=>{
+  if(mode==='lobby'&&e.target.tagName==='INPUT')return;
+  const k=e.key.toLowerCase();
+  if(quiz){
+    if(!quiz.done){const m={a:0,b:1,c:2,d:3,e:4,'1':0,'2':1,'3':2,'4':3,'5':4}[k];if(m!==undefined){answer(m);e.preventDefault()}}
+    else if(k==='enter'||k===' '){closeQuiz();e.preventDefault()}
+    return;
+  }
+  if(mode!=='player')return;
+  if(k==='w'||k==='arrowup')input.up=1;
+  else if(k==='s'||k==='arrowdown')input.dn=1;
+  else if(k==='a'||k==='arrowleft')input.lf=1;
+  else if(k==='d'||k==='arrowright')input.rt=1;
+  else if(k===' '){input.fire=true}
+  else if(k==='r')tryQuiz(false);
+  else if(k==='e')tryQuiz(true);
+  else if(k==='h')openTut();else if(k==='1'||k==='2'||k==='3'||k==='4')setStance(+k-1);else if(k==='c')setStance(me.st===1?0:1);else if(k==='x')setStance(me.st===2?0:2);else if(k==='z')setStance(me.st===3?0:3);
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+});
+addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w'||k==='arrowup')input.up=0;else if(k==='s'||k==='arrowdown')input.dn=0;else if(k==='a'||k==='arrowleft')input.lf=0;else if(k==='d'||k==='arrowright')input.rt=0;else if(k===' ')input.fire=false;
+});
+cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){input.mx=e.offsetX;input.my=e.offsetY;input.mouse=true}});
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&!quiz){input.mx=e.offsetX;input.my=e.offsetY;input.mouse=true;input.fire=true}});
+addEventListener('pointerup',e=>{if(e.pointerType==='mouse')input.fire=false});
+addEventListener('blur',()=>{input.up=input.dn=input.lf=input.rt=0;input.fire=false});
+$('#btnQuiz').onclick=()=>tryQuiz(inZone());
+function setStance(n){if(mode!=='player'||!me.alive||quiz||me.st===n)return;me.st=n;me.fireCd=Math.max(me.fireCd,.2);sfx('click');pushNow()}
+document.querySelectorAll('#stance button').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();setStance(+b.dataset.s)}});
+cv.addEventListener('pointerdown',()=>{if(mode==='player'&&me.out)specI++});
+$('#btnMute').onclick=()=>{audioOn=!audioOn;$('#btnMute').textContent=audioOn?'🔊':'🔇'};
+
+// Sentuh: joystick kiri untuk gerak, kanan untuk bidik dan tembak
+const isTouch=matchMedia('(pointer:coarse)').matches;
+if(isTouch)$('#app').classList.add('touch');
+function stick(zone,knob,onMove,onEnd){
+  let id=null,ox=0,oy=0;const app=$('#app').getBoundingClientRect.bind($('#app'));
+  zone.addEventListener('pointerdown',e=>{if(id!==null)return;id=e.pointerId;zone.setPointerCapture(id);ox=e.clientX;oy=e.clientY;const r=app();knob.style.display='block';knob.style.left=(ox-r.left)+'px';knob.style.top=(oy-r.top)+'px';onMove(0,0)});
+  zone.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;let dx=e.clientX-ox,dy=e.clientY-oy;const L=Math.hypot(dx,dy),M=56;if(L>M){dx=dx/L*M;dy=dy/L*M}knob.style.setProperty('--dx',dx+'px');knob.style.setProperty('--dy',dy+'px');onMove(dx/M,dy/M)});
+  const end=e=>{if(e.pointerId!==id)return;id=null;knob.style.display='none';knob.style.setProperty('--dx','0px');knob.style.setProperty('--dy','0px');onEnd()};
+  zone.addEventListener('pointerup',end);zone.addEventListener('pointercancel',end);
+}
+stick($('#stickL'),$('#knobL'),(x,y)=>{input.tx=x;input.ty=y},()=>{input.tx=0;input.ty=0});
+stick($('#stickR'),$('#knobR'),(x,y)=>{input.ax=x;input.ay=y;input.aimTouch=true;input.fire=Math.hypot(x,y)>.3},()=>{input.ax=0;input.ay=0;input.fire=false});
+
+/* ====== Update ====== */
+function update(dt){
+  if(GS.status==='pause')dt=0;
+  const ri=roundInfo(Date.now());
+  if(ri.r!==cur.r){
+    const first=cur.r===-1;cur.r=ri.r;me.late=false;
+    if(!first||mode==='player'){me.kc={};me.qp=0;me.lastKills=0;me.ammo=MAXAMMO;me.hp=MAXHP;me.alive=true;me.shield=2.5;me.shots=[];me.st=0;me.bk=0;me.lives=LIVES;me.qa=0;me.sup=0;me.el=0;me.out=false;me.w=0;if(me.late){me.lives=0;me.out=true;me.w=1;me.alive=false}me.late=false;bullets.length=0;if(quiz)closeQuiz();if(mode==='player'){const s=spawnPos(me.team);me.x=s.x;me.y=s.y}}
+  }
+  cur.phase=ri.phase;cur.left=ri.left;
+  syncPeers(dt);
+  if(mode==='player'){
+    me.stf+=(me.st-me.stf)*Math.min(1,dt*9);me.fireCd-=dt;me.shield=Math.max(0,me.shield-dt);me.quizCd=Math.max(0,me.quizCd-dt);me.flash=Math.max(0,me.flash-dt);
+    if(!me.alive&&!me.out&&!me.w){me.respawn-=dt;if(me.respawn<=0){me.alive=true;me.hp=MAXHP;me.shield=2.5;const s=spawnPos(me.team);me.x=s.x;me.y=s.y;pushNow()}}
+    if(cur.phase==='result'&&quiz)closeQuiz();
+    if(me.alive&&!quiz&&cur.phase!=='result'&&!G.over){
+      let mx=input.rt-input.lf+input.tx,my=input.dn-input.up+input.ty;
+      const L=Math.hypot(mx,my);if(L>1){mx/=L;my/=L}
+      const SP=LS([265,165,105,50],me.stf),nx=me.x+mx*SP*dt,ny=me.y+my*SP*dt;me.ph=(me.ph||0)+Math.hypot(mx,my)*SP*dt/12;
+      if(!hitsWall(nx,me.y,R))me.x=clamp(nx,M,W-M);
+      if(!hitsWall(me.x,ny,R))me.y=clamp(ny,M,H-M);
+      if(input.aimTouch&&Math.hypot(input.ax,input.ay)>.15)me.a=Math.atan2(input.ay,input.ax);
+      else if(input.mouse&&!isTouch)me.a=Math.atan2((input.my-vh/2)/cam.sc+cam.y-me.y,(input.mx-vw/2)/cam.sc+cam.x-me.x);
+      else if(L>.1&&isTouch)me.a=Math.atan2(my,mx);
+      if(input.fire&&me.fireCd<=0&&cur.phase==='play'&&GS.status!=='pause'){
+        if(me.ammo>0){
+          me.fireCd=FIRE_CD;me.ammo--;me.shotN++;
+          const aa=me.a+(Math.random()-.5)*LS([.2,.1,.05,.02],me.stf)*(L>.1?1.5:1);me.fireT=performance.now();spawnBullet(me.x,me.y,aa,me.peer||'me',me.team,0);
+          me.shots.push({i:me.shotN,x:Math.round(me.x),y:Math.round(me.y),a:Math.round(aa*100)/100});if(me.shots.length>3)me.shots.shift();
+          sfx('shoot');pushNow();
+        }else{me.fireCd=.4;sfx('click');if(me.quizCd<=0)toast('Peluru habis! Tekan R untuk jawab soal')}
+      }
+    }
+    if(quiz&&!quiz.done){
+      const left=quiz.end-performance.now();$('#qtime i').style.width=clamp(left/30000*100,0,100)+'%';
+      if(left<=0)answer(-1);
+    }
+    $('#qhp').textContent=`HP ${Math.max(0,Math.round(me.hp))} · Peluru ${me.ammo}`;
+  }
+  updateBullets(dt);
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.94;p.vy*=.94;if(p.life<=0)parts.splice(i,1)}
+  for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.t+=dt;f.y-=40*dt;if(f.t>1.2)floats.splice(i,1)}
+  shake=Math.max(0,shake-dt*30);
+}
+
+/* ====== Gambar ====== */
+function resize(){
+  dpr=Math.min(devicePixelRatio||1,2);vw=$('#app').clientWidth;vh=$('#app').clientHeight;
+  cv.width=Math.round(vw*dpr);cv.height=Math.round(vh*dpr);
+}
+addEventListener('resize',resize);
+function drawSoldier(p,col,skin){
+  const s=p.stf==null?(p.st|0):p.stf,V=a=>LS(a,s),sw=Math.sin(p.ph||0);
+  const tx=V([0,-2,-7,-10]),rx=V([8,9,15,17]),ry=V([14,14,11,10]),hx=V([3,6,13,19]),hr=V([8.5,8,7.5,7]);
+  const ln='rgba(10,14,8,.85)',uni='#5c6439',uni2='#474f2b';
+  const bl=(x,y,rw,rh,f)=>{ctx.fillStyle=f;ctx.beginPath();ctx.ellipse(x,y,rw,rh,0,0,TAU);ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle=ln;ctx.stroke()};
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.lineCap='round';
+  const hip=tx-rx*.55,ll=V([14,12,20,26]),spr=V([5,7,6,7]),swg=V([8,3,6,2]);
+  for(const k of[-1,1]){const fx=hip-ll+k*sw*swg,fy=k*spr;
+    ctx.strokeStyle=ln;ctx.lineWidth=9.5;ctx.beginPath();ctx.moveTo(hip,k*4);ctx.lineTo(fx,fy);ctx.stroke();
+    ctx.strokeStyle=uni2;ctx.lineWidth=7;ctx.stroke();bl(fx-1,fy,5,3.8,'#18150f')}
+  bl(tx-rx*.6,0,rx*.55,ry*.72,'#383d24');
+  bl(tx,0,rx,ry,uni);
+  ctx.save();ctx.beginPath();ctx.ellipse(tx,0,rx,ry,0,0,TAU);ctx.clip();ctx.fillStyle='rgba(28,36,16,.55)';
+  for(let i=0;i<5;i++){ctx.beginPath();ctx.ellipse(tx-rx*.6+i*rx*.3,((i*7)%5-2)*ry*.38,rx*.3,ry*.26,i,0,TAU);ctx.fill()}ctx.restore();
+  bl(tx+1,0,rx*.5,ry*.7,'#3d4329');
+  bl(tx+2,-ry*.92,3.4,2.6,col);bl(tx+2,ry*.92,3.4,2.6,col);
+  const rs=tx+V([2,4,8,11]),yo=4.5;
+  ctx.strokeStyle=ln;ctx.lineWidth=7.5;ctx.beginPath();ctx.moveTo(tx+2,-ry*.7);ctx.lineTo(rs+22,yo-1);ctx.moveTo(tx+2,ry*.7);ctx.lineTo(rs+9,yo+1);ctx.stroke();
+  ctx.strokeStyle=uni;ctx.lineWidth=5.5;ctx.stroke();
+  ctx.fillStyle='#5a4028';ctx.fillRect(rs-6,yo-2.5,10,5);
+  ctx.fillStyle='#1b1d22';ctx.fillRect(rs+3,yo-3,26,6);ctx.fillRect(rs+13,yo+2,4,8);
+  ctx.fillStyle='#8a93a3';ctx.fillRect(rs+29,yo-1.2,12,2.4);
+  ctx.strokeStyle=ln;ctx.lineWidth=1;ctx.strokeRect(rs+3,yo-3,26,6);
+  ctx.fillStyle=skin;ctx.beginPath();ctx.arc(rs+22,yo-1,3.2,0,TAU);ctx.arc(rs+9,yo+1,3.2,0,TAU);ctx.fill();
+  bl(hx,0,hr,hr,'#4b5330');
+  ctx.strokeStyle=col;ctx.lineWidth=2.6;ctx.beginPath();ctx.arc(hx,0,hr*.68,0,TAU);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.ellipse(hx-hr*.2,-hr*.3,hr*.35,hr*.2,0,0,TAU);ctx.fill();
+  if(p.mf){ctx.save();ctx.translate(rs+41,yo-1);ctx.globalCompositeOperation='lighter';ctx.fillStyle='rgba(255,200,90,.9)';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(16,-5);ctx.lineTo(11,0);ctx.lineTo(16,5);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,220,.95)';ctx.beginPath();ctx.arc(2,0,4,0,TAU);ctx.fill();ctx.restore()}
+  ctx.restore();
+}
+function drawPlayer(p,isMe){
+  const col=TEAMS[p.team].c,sym=TEAMS[p.team].sym,skin=SKIN[hashS(p.name)%5];
+  // cincin tim di tanah dan bayangan
+  const A=p.al==null?1:p.al,sf=p.stf==null?(p.st|0):p.stf;ctx.globalAlpha=A;ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(p.x+3,p.y+4,LS([16,17,24,28],sf),LS([13,13,11,10],sf),p.a,0,TAU);ctx.fill();
+  ctx.strokeStyle=col;ctx.globalAlpha=(isMe?.9:.55)*A;ctx.lineWidth=isMe?3:2.5;ctx.beginPath();ctx.arc(p.x,p.y,R+5-sf*2,0,TAU);ctx.stroke();ctx.globalAlpha=A;
+  const rl=roleOf(p.team);
+  if(rl){ctx.save();const rc=rl===1?'#ff4d6d':'#ffb020';ctx.strokeStyle=rc;ctx.lineWidth=3;ctx.setLineDash([6,5]);ctx.beginPath();ctx.arc(p.x,p.y,R+16,0,TAU);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=rc;ctx.font='700 11px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillText(rl===1?'BURUAN':'PEMBURU',p.x,p.y+R+32);ctx.restore()}
+  drawSoldier(p,col,skin);
+  if(false){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.scale(1.15,1.15);
+  const sw=Math.sin(p.ph||0)*6;
+  ctx.fillStyle='#161a24';ctx.beginPath();ctx.ellipse(-5+sw,-8,7,4,0,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(-5-sw,8,7,4,0,0,TAU);ctx.fill();
+  // ransel
+  ctx.fillStyle='#2a3140';ctx.beginPath();ctx.roundRect?ctx.roundRect(-15,-8,9,16,3):ctx.rect(-15,-8,9,16);ctx.fill();
+  // senapan
+  ctx.fillStyle='#22262e';ctx.fillRect(4,0,32,5);ctx.fillStyle='#5b4330';ctx.fillRect(4,-1,10,7);ctx.fillStyle='#8a93a3';ctx.fillRect(32,1,6,3);
+  // lengan
+  ctx.lineCap='round';ctx.strokeStyle=col;ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(1,-14);ctx.lineTo(24,3);ctx.stroke();ctx.beginPath();ctx.moveTo(1,14);ctx.lineTo(12,5);ctx.stroke();
+  ctx.fillStyle=skin;ctx.beginPath();ctx.arc(25,3,3.6,0,TAU);ctx.fill();ctx.beginPath();ctx.arc(13,5,3.6,0,TAU);ctx.fill();
+  // badan
+  ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(0,0,9,17,0,0,TAU);ctx.fill();
+  ctx.lineWidth=2;ctx.strokeStyle='rgba(10,20,30,.7)';ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,.14)';ctx.beginPath();ctx.ellipse(-2,0,4,11,0,0,TAU);ctx.fill();
+  // kepala dan topi
+  ctx.fillStyle=skin;ctx.beginPath();ctx.arc(3,0,8.5,0,TAU);ctx.fill();ctx.strokeStyle='rgba(10,20,30,.6)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(1,0,8,0,TAU);ctx.fill();ctx.strokeStyle='rgba(10,20,30,.7)';ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.roundRect?ctx.roundRect(7,-5,8,10,3):ctx.rect(7,-5,8,10);ctx.fill();
+  ctx.fillStyle=col;ctx.beginPath();ctx.roundRect?ctx.roundRect(7,-5,7,10,3):ctx.rect(7,-5,7,10);ctx.fill();ctx.strokeStyle='rgba(10,20,30,.7)';ctx.stroke();
+  ctx.restore();}
+  // perisai
+  if(p.sh){const a=.5+.3*Math.sin(performance.now()/90);ctx.strokeStyle=`rgba(120,235,255,${a})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,R+10,0,TAU);ctx.stroke();ctx.fillStyle='rgba(56,225,255,.14)';ctx.fill()}
+  // HP
+  const bw=46,by=p.y-R-22+sf*3;
+  ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(p.x-bw/2,by,bw,6);
+  ctx.fillStyle=p.hp>50?'#38e08c':p.hp>25?'#ffc233':'#ff4d6d';ctx.fillRect(p.x-bw/2+1,by+1,(bw-2)*p.hp/MAXHP,4);
+  // nama dengan simbol tim
+  ctx.font='700 13px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(p.name).width+30,ny=by-13;
+  ctx.fillStyle='rgba(5,12,8,.9)';ctx.beginPath();ctx.roundRect?ctx.roundRect(p.x-w/2,ny-10,w,20,6):ctx.rect(p.x-w/2,ny-10,w,20);ctx.fill();
+  ctx.strokeStyle=isMe?'#fff':col;ctx.lineWidth=isMe?2:1.5;ctx.stroke();
+  ctx.fillStyle=col;symPath(ctx,sym,p.x-w/2+11,ny,4.6);ctx.fill();
+  ctx.fillStyle='#fff';ctx.fillText(p.name,p.x+6,ny+1);
+  if(isMe){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(p.x-6,ny-17);ctx.lineTo(p.x+6,ny-17);ctx.lineTo(p.x,ny-11);ctx.fill()}
+  if(p.qz){ctx.fillStyle='#8cf2ff';ctx.font='700 14px "Chakra Petch",sans-serif';ctx.fillText('? menjawab…',p.x,ny-22)}
+  ctx.globalAlpha=1;
+}
+function drawWorld(){
+  const t=performance.now()/1000;
+  ctx.fillStyle='#03050d';ctx.fillRect(0,0,W,H);
+  if(staticCv)ctx.drawImage(staticCv,0,0,W,H);
+  // animasi Zona Soal
+  ctx.save();ctx.translate(CX,CY);ctx.rotate(t*.4);ctx.strokeStyle='rgba(56,225,255,.55)';ctx.lineWidth=3;ctx.setLineDash([26,18]);ctx.beginPath();ctx.arc(0,0,ZONE_R-14,0,TAU);ctx.stroke();ctx.restore();
+  ctx.setLineDash([]);
+  // denyut markas
+  BASES.forEach((b,i)=>{const k=.5+.5*Math.sin(t*2+i);ctx.strokeStyle=TEAMS[i].c;ctx.globalAlpha=.15+.2*k;ctx.lineWidth=2;ctx.beginPath();ctx.arc(b.x,b.y,BASE_R-10-k*8,0,TAU);ctx.stroke();ctx.globalAlpha=1});
+  // debu dan abu beterbangan
+  ctx.fillStyle='rgba(210,198,170,.4)';for(let i=0;i<46;i++){ctx.fillRect((i*733+t*(10+i%5*5))%W,(i*419+Math.sin(t*.4+i)*30+t*6)%H,2,2)}
+  // peluru
+  ctx.globalCompositeOperation='lighter';ctx.lineCap='round';
+  for(const b of bullets){
+    const c=TEAMS[b.t]?.c||'#fff';
+    ctx.strokeStyle=c;ctx.lineWidth=5;ctx.globalAlpha=.45;ctx.beginPath();ctx.moveTo(b.x-b.vx*.035,b.y-b.vy*.035);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(b.x-b.vx*.02,b.y-b.vy*.02);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  // semak belukar (lapisan bawah)
+  const vx0=cam.x-vw/cam.sc/2-160,vx1=cam.x+vw/cam.sc/2+160,vy0=cam.y-vh/cam.sc/2-160,vy1=cam.y+vh/cam.sc/2+160,seeB=[];
+  for(const b of bushes){b.cv=0;if(b.x<vx0||b.x>vx1||b.y<vy0||b.y>vy1)continue;b.sp=b.sp||mkBush(b);seeB.push(b);const bs=b.r+26;ctx.drawImage(b.sp,b.x-bs,b.y-bs)}
+  // pemain urut y; musuh yang bersembunyi di semak tidak terlihat dari jauh
+  const draw=[],tn=performance.now(),ft=specTarget(),pl=mode==='player';
+  for(const o of others){
+    if(!o.al)continue;
+    const bu=o.st>=1?bushAt(o.x,o.y):null;let al=1;
+    if(pl&&o.team!==me.team){
+      const d=Math.hypot(o.x-ft.x,o.y-ft.y);
+      if(bu&&d>[0,200,140,90][o.st]&&tn>(o.rev||0))continue;
+      if(!bu&&o.st>=2&&d>450)al=.7;
+    }else if(bu)al=.6;
+    if(bu)bu.cv=1;
+    draw.push({ph:o.ph,x:o.x,y:o.y,a:o.a,team:o.team,name:o.name,hp:o.hp,sh:o.sh,qz:o.qz,me:false,st:o.st,stf:o.stf,al,mf:tn-(o.fireT||0)<90});
+  }
+  if(pl&&me.alive){const mb=me.st>=1?bushAt(me.x,me.y):null;if(mb)mb.cv=2;draw.push({ph:me.ph,x:me.x,y:me.y,a:me.a,team:me.team,name:me.name,hp:me.hp,sh:me.shield>0,qz:quiz&&!quiz.done,me:true,st:me.st,stf:me.stf,al:1,mf:tn-me.fireT<90})}
+  draw.sort((a,b)=>a.y-b.y);
+  for(const p of draw)drawPlayer(p,p.me);
+  for(const b of seeB)if(b.cv){const bs=b.r+26;ctx.globalAlpha=b.cv===2?.4:.6;ctx.drawImage(b.sp,b.x-bs,b.y-bs);ctx.globalAlpha=1}
+  // asap dari bangkai kendaraan
+  ctx.save();for(const e of SMK)for(let k=0;k<7;k++){const ph=(t*.1+k/7+e.o)%1;ctx.globalAlpha=Math.min(1,ph*5)*(1-ph)*.22;ctx.fillStyle=k%2?'#77736b':'#4c4a45';ctx.beginPath();ctx.arc(e.x+ph*70+Math.sin(t+k)*8,e.y-ph*180,16+ph*54,0,TAU);ctx.fill()}ctx.restore();
+  // partikel
+  ctx.globalCompositeOperation='lighter';
+  for(const p of parts){ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.fill()}
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  ctx.font='700 20px "Chakra Petch",sans-serif';ctx.textAlign='center';
+  for(const f of floats){ctx.globalAlpha=clamp(1.2-f.t,0,1);ctx.fillStyle=f.c;ctx.strokeStyle='rgba(0,0,0,.7)';ctx.lineWidth=4;ctx.strokeText(f.text,f.x,f.y);ctx.fillText(f.text,f.x,f.y)}
+  ctx.globalAlpha=1;
+  // hitung mundur respawn
+  if(mode==='player'&&!me.alive){ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='700 26px "Chakra Petch",sans-serif';ctx.fillText('Hidup lagi dalam '+Math.ceil(me.respawn),me.x,me.y-40)}
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  if(mode==='lobby'){return}
+  const dt=Math.min(.05,(now-(frame.t||now))/1000);frame.t=now;
+  update(dt);
+  // kamera
+  if(mode==='spec'){cam.sc=Math.min(vw/W,vh/H)*.97;cam.x=CX;cam.y=CY}
+  else{cam.sc=clamp(Math.sqrt(vw*vh)/820,.5,1.5);const k=1-Math.exp(-dt*9),ft=specTarget();cam.x+=(ft.x-cam.x)*k;cam.y+=(ft.y-cam.y)*k}
+  const sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#03050d';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(dpr*cam.sc,0,0,dpr*cam.sc,dpr*(vw/2-cam.x*cam.sc+sx),dpr*(vh/2-cam.y*cam.sc+sy));
+  drawWorld();
+  ctx.setTransform(dpr,0,0,dpr,0,0);grade(now);
+  if(me.flash>0){const g=ctx.createRadialGradient(vw/2,vh/2,Math.min(vw,vh)*.3,vw/2,vh/2,Math.max(vw,vh)*.7);g.addColorStop(0,'rgba(255,40,70,0)');g.addColorStop(1,`rgba(255,40,70,${me.flash*1.6})`);ctx.fillStyle=g;ctx.fillRect(0,0,vw,vh)}
+  drawMini();
+}
+let boomAt=performance.now()+15000,boomF=0;
+function grade(now){
+  if(now>boomAt){boomAt=now+20000+Math.random()*25000;boomF=.22;sfx('boom')}
+  boomF=Math.max(0,boomF-.01);
+  const g=ctx.createRadialGradient(vw/2,vh/2,Math.min(vw,vh)*.35,vw/2,vh/2,Math.max(vw,vh)*.75);g.addColorStop(0,'rgba(20,16,6,0)');g.addColorStop(1,'rgba(12,8,2,.55)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,vw,vh);ctx.fillStyle='rgba(80,64,30,.1)';ctx.fillRect(0,0,vw,vh);
+  if(boomF>0){ctx.fillStyle='rgba(255,170,90,'+boomF+')';ctx.fillRect(0,0,vw,vh)}
+}
+function drawMini(){
+  const k=mini.width/W;mctx.setTransform(1,0,0,1,0,0);mctx.fillStyle='#0c2415';mctx.fillRect(0,0,mini.width,mini.height);
+  mctx.scale(k,k);
+  mctx.fillStyle='rgba(56,225,255,.25)';mctx.beginPath();mctx.arc(CX,CY,ZONE_R,0,TAU);mctx.fill();
+  BASES.forEach((b,i)=>{mctx.fillStyle=TEAMS[i].c+'55';mctx.beginPath();mctx.arc(b.x,b.y,BASE_R,0,TAU);mctx.fill()});
+  mctx.fillStyle='rgba(60,100,40,.7)';for(const b of bushes){mctx.beginPath();mctx.arc(b.x,b.y,b.r,0,TAU);mctx.fill()}
+  mctx.fillStyle='#8b9298';for(const r of walls)mctx.fillRect(r.x,r.y,r.w,r.h);
+  for(const o of others){if(!o.al)continue;if(mode==='player'&&o.team!==me.team&&o.st>=1&&bushAt(o.x,o.y)&&performance.now()>(o.rev||0))continue;mctx.fillStyle=TEAMS[o.team].c;mctx.beginPath();mctx.arc(o.x,o.y,26,0,TAU);mctx.fill();if(roleOf(o.team)===1){mctx.strokeStyle='#ff4d6d';mctx.lineWidth=10;mctx.stroke()}}
+  if(mode==='player'&&me.alive){mctx.fillStyle=TEAMS[me.team].c;mctx.strokeStyle='#fff';mctx.lineWidth=14;mctx.beginPath();mctx.arc(me.x,me.y,40,0,TAU);mctx.fill();mctx.stroke();
+    mctx.strokeStyle='rgba(255,255,255,.4)';mctx.lineWidth=8;mctx.strokeRect(cam.x-vw/cam.sc/2,cam.y-vh/cam.sc/2,vw/cam.sc,vh/cam.sc)}
+}
+
+/* ====== HUD ====== */
+const fmt=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+let toastT=0;
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2400)}
+function buildHud(){
+  const tw=$('#teams');tw.textContent='';
+  TEAMS.forEach((t,i)=>{const d=document.createElement('div');d.className='tchip';d.style.setProperty('--c',t.c);d.innerHTML='<span class="nm"></span><b>0</b>';d.querySelector('.nm').textContent=t.n+' · 0/7';tw.append(d)});
+  $('#ammo').innerHTML='';for(let i=0;i<MAXAMMO;i++){const b=document.createElement('b');$('#ammo').append(b)}
+}
+function hudCtl(){
+  const pz=GS.status==='pause',wb=$('#waitbar');
+  wb.hidden=!(mode==='player'&&roomKind==='online'&&(cur.phase==='wait'||pz));
+  wb.firstChild.nodeValue=pz?'Game dijeda guru…':'Menunggu guru memulai game…';
+  wb.querySelector('span').textContent=pz?'Tunggu sebentar, guru akan melanjutkan.':'Durasi '+Math.round(PLAY_SEC/60)+' menit · '+(QGOAL>0?'target '+QGOAL+' soal':'tanpa target soal')+'. Kamu boleh berjalan-jalan, tetapi belum bisa menembak.';
+  if(mode==='spec'&&isTeacher){$('#cfgPlay').disabled=$('#cfgGoal').disabled=(cur.phase==='ready'||cur.phase==='play');$('#ctlPause').textContent=pz?'Lanjutkan':'Jeda';if(!$('#tmod').hidden&&tmView==='pl')renderTM()}
+  if(mode==='spec'&&isTeacher){
+    const cn=teamCounts();
+    $('#ctlCode').textContent=myCode;
+    $('#ctlInfo').textContent='Pemain masuk: '+cn.reduce((a,b)=>a+b,0)+'\n'+TEAMS.map((t,i)=>t.n+': '+cn[i]).join('\n')+'\nStatus: '+({wait:'menunggu dimulai',ready:'bersiap',play:'berlangsung',result:'selesai'}[cur.phase]||'');
+    $('#ctlStart').textContent=cur.phase==='wait'?'Mulai game':'Mulai ronde baru';
+  }
+}
+let hudLast=0;
+function hudTick(){
+  if(mode==='lobby')return;
+  computeScores();computeTeams();hudCtl();
+  $('#clockT').textContent=cur.phase==='wait'?'--:--':fmt(cur.left);$('#endrule').textContent='Selesai: waktu habis · 1 tim tersisa'+(QGOAL>0?' · '+QGOAL+' soal':'');$('#clockLbl').textContent=cur.phase==='play'?'SISA WAKTU RONDE':cur.phase==='ready'?'BERSIAP · TIM DIKUNCI':cur.phase==='wait'?'MENUNGGU GURU':'ISTIRAHAT';
+  [...$('#teams').children].forEach((d,i)=>{d.classList.toggle('mine',mode==='player'&&me.team===i);d.querySelector('b').textContent=scores.ts[i];d.querySelector('.nm').textContent=`${TEAMS[i].n} · ${G.part[i]?(G.out[i]?'HABIS':G.lives[i]+'♥ '+G.qa[i]+(QGOAL>0?'/'+QGOAL:'')):'kosong'}`;d.style.opacity=(G.out[i]||!G.part[i])?.38:1});
+  const lb=$('#lb');lb.textContent='';
+  const t=document.createElement('div');t.id='lbT';t.textContent='PERINGKAT PEMAIN';
+  const hdr=document.createElement('li');hdr.append(t);lb.append(hdr);
+  scores.rows.slice(0,mode==='spec'?10:5).forEach(r=>{const li=document.createElement('li');li.style.setProperty('--c',TEAMS[r.team].c);if(r.me)li.className='me';li.innerHTML='<i></i><span></span><b></b>';li.children[1].textContent=r.name;li.children[2].textContent=r.score;lb.append(li)});
+  const now=performance.now();while(feedL.length&&now-feedL[0].t>5000)feedL.shift();
+  const f=$('#feed');f.textContent='';feedL.forEach(e=>{const d=document.createElement('div');d.style.setProperty('--c',e.col);d.textContent=e.text;f.append(d)});
+  if(mode==='player'){
+    [...$('#stance').children].forEach((b,i)=>b.classList.toggle('on',me.st===i));$('#hpBar').style.width=Math.max(0,me.hp)+'%';
+    [...$('#ammo').children].forEach((b,i)=>b.classList.toggle('off',i>=me.ammo));
+    const st=$('#mcState');updMission();
+    if(me.w){st.textContent='Ronde sedang berjalan. Kamu ikut di ronde berikutnya.';st.className='warn'}
+    else if(me.out){st.textContent=G.out[me.team]?'Timmu tersingkir. Tonton sampai ronde selesai.':'Kamu tersingkir dan tidak bisa hidup lagi. Jawab soal (tekan R) untuk mengisi amunisi kawan satu tim. Ketuk layar untuk ganti teman.';st.className='warn'}
+    else if(!me.alive){st.textContent='Jatuh. Hidup lagi di markas…';st.className=''}
+    else if(me.ammo===0){st.textContent='Peluru habis. Tekan R untuk soal.';st.className='warn'}
+    else if(me.shield>0){st.textContent='Perisai aktif';st.className=''}
+    else if(me.st>=1&&bushAt(me.x,me.y)){st.textContent='Bersembunyi di semak · musuh sulit melihatmu';st.className=''}
+    else if(inBase(me.x,me.y,me.team)){st.textContent='Di markas · tidak ada perlindungan';st.className=''}
+    else if(inZone()){st.textContent='Zona Soal: tekan E, poin ×2';st.className='warn'}
+    else{st.textContent=`Poin kamu: ${(scores.rows.find(r=>r.me)||{score:0}).score} · ${STN[me.st|0]}`;st.className=''}
+    const b=$('#btnQuiz'),c=canQuiz(inZone());b.disabled=c!=='ok'&&!(c==='full'&&false);
+    b.classList.toggle('ready',c==='ok');b.textContent=me.out?'BANTU TIM · R':inZone()?'JAWAB · ZONA ×2':'ISI AMUNISI · R';
+    if(c==='full')b.disabled=true;
+  }
+  // koneksi
+  const cn=$('#conn');
+  if(roomKind==='solo'){cn.className='panel solo';$('#connT').textContent='LATIHAN SOLO · '+(others.length+1)+' PEMAIN'}
+  else if(room&&room.connected&&room.connected()){cn.className='panel';$('#connT').textContent='ONLINE · '+(others.length+(mode==='player'?1:0))+' DI ARENA'}
+  else{cn.className='panel off';$('#connT').textContent='MENGHUBUNGKAN…'}
+  // hasil ronde
+  const res=$('#result');
+  if(cur.phase==='result'||G.over){
+    if(res.hidden){res.hidden=false}
+    const order=G.rank.length?G.rank:[0,1,2,3,4].sort((a,b)=>scores.ts[b]-scores.ts[a]);
+    const w=order[0];
+    $('#rwin').textContent=G.rank.length>1?'Tim '+TEAMS[w].n+' menang':'Belum ada pemenang';$('#rwin').style.setProperty('--c',G.rank.length>1?TEAMS[w].c:'#fff');
+    const ls=G.rank.length>1?G.rank[G.rank.length-1]:-1;$('#rnext').textContent='Selesai: '+(G.over?(G.stand.reduce((a,b)=>a+b,0)<=1?'tinggal satu tim':'sebuah tim mencapai '+QGOAL+' soal'):'waktu habis')+'. '+(ls>=0?'Kalah: Tim '+TEAMS[ls].n+(G.out[ls]?' (habis paling awal). ':' (poin paling sedikit). '):'')+'Menunggu guru memulai ronde baru.';
+    const rt=$('#rteams');rt.textContent='';order.forEach((i,k)=>{const d=document.createElement('div');d.className='rr';d.style.setProperty('--c',TEAMS[i].c);d.innerHTML='<span></span><b></b>';d.children[0].textContent=`${k+1}. Tim ${TEAMS[i].n}${G.out[i]?' · habis':''}`;d.children[1].textContent=G.part[i]?scores.ts[i]+' poin (soal '+scores.tq[i]+' · KO '+scores.tk[i]+') · '+G.lives[i]+'♥':'—';rt.append(d)});
+    const rp=$('#rplayers');rp.textContent='';scores.rows.slice(0,5).forEach((r,k)=>{const d=document.createElement('div');d.className='rr';d.style.setProperty('--c',TEAMS[r.team].c);d.innerHTML='<span></span><b></b>';d.children[0].textContent=`${k+1}. ${r.name} (${r.kills} KO)`;d.children[1].textContent=r.score;rp.append(d)});
+  }else if(!res.hidden)res.hidden=true;
+}
+setInterval(hudTick,250);
+
+/* ====== Lobi ====== */
+let pickTeam=-1;
+function teamCounts(){
+  const c=[0,0,0,0,0];
+  if(!room)return c;
+  try{for(const p of room.peers()){const pr=p.presence;if(p.kind==='viewer'&&!p.isMe&&pr&&!pr.sp&&pr.t!==undefined&&pr.n)c[clamp(pr.t|0,0,4)]++}}catch{}
+  return c;
+}
+function lobbyOut(){
+  const ri=roundInfo(Date.now()),n=[0,0,0,0,0],al=[0,0,0,0,0],o=[0,0,0,0,0];
+  if(!room||ri.phase!=='play')return o;
+  try{for(const p of room.peers()){const pr=p.presence;if(p.kind==='viewer'&&!p.isMe&&pr&&!pr.sp&&pr.t!==undefined&&pr.n&&(pr.r|0)===ri.r&&!pr.w){const t=clamp(pr.t|0,0,4);n[t]++;if((pr.lv|0)>0)al[t]++}}}catch{}
+  for(let t=0;t<5;t++)o[t]=(n[t]>0&&al[t]===0)?1:0;
+  return o;
+}
+function renderLobbyTeams(){
+  const cnt=teamCounts(),box=$('#tpick'),ou=lobbyOut();
+  if(!box.children.length){
+    const a=document.createElement('button');a.type='button';a.className='tc auto';a.dataset.t='-1';a.innerHTML='<div><b>Otomatis</b><span>Masuk ke tim yang paling sedikit anggotanya</span></div>';box.append(a);
+    TEAMS.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='tc';b.dataset.t=i;b.style.setProperty('--c',t.c);b.innerHTML=symSvg(t.sym,t.c)+'<div><b></b><span></span></div>';b.querySelector('b').textContent='Tim '+t.n;box.append(b)});
+    box.onclick=e=>{const b=e.target.closest('.tc');if(!b)return;if(+b.dataset.t>=0&&lobbyOut()[+b.dataset.t]){toast('Tim itu sudah tersingkir dan tidak bisa dimasuki lagi.');return}pickTeam=+b.dataset.t;renderLobbyTeams()};
+  }
+  [...box.children].forEach(b=>{
+    const t=+b.dataset.t;b.setAttribute('aria-pressed',String(t===pickTeam));
+    if(t>=0){b.querySelector('span').textContent=ou[t]?'Tersingkir · tidak bisa dimasuki':`${cnt[t]}/7 anggota`;b.classList.toggle('full',cnt[t]>=7||!!ou[t])}
+    else b.style.setProperty('--c','#38e1ff');
+  });
+}
+setInterval(()=>{if(mode==='lobby'){renderLobbyTeams();
+  const s=$('#lstat');
+  if(roomKind==='online'){const n=room&&room.peers?room.peers().filter(p=>p.kind==='viewer').length:0;s.textContent=room.connected()?`Terhubung · ${n} orang di ruang ini`:'Menghubungkan ke ruang permainan…'}
+  else if(roomKind==='none')s.textContent='Mencari ruang permainan…'}
+},600);
+
+function startMode(m){
+  mode=m;$('#lobby').hidden=true;$('#hud').hidden=false;buildHud();resize();
+  $('#ctl').hidden=!(m==='spec'&&isTeacher);$('#waitbar').hidden=true;if(m==='player'&&roomKind==='online'){let seen=false;try{seen=!!localStorage.getItem('arena_tut')}catch{}if(!seen)setTimeout(openTut,400)}$('#meCard').hidden=m!=='player';$('#stance').hidden=m!=='player';$('#btnQuiz').hidden=m!=='player';$('#hint').hidden=m!=='player';
+  $('#app').classList.toggle('spec',m==='spec');
+  if(m!=='player')$('#app').classList.remove('touch');
+  cur.r=-1;shuffleDeck();
+  if(m==='player'){
+    const s=spawnPos(me.team);me.x=s.x;me.y=s.y;me.hp=MAXHP;me.alive=true;me.ammo=MAXAMMO;me.shield=2.5;me.lives=LIVES;me.qa=0;me.sup=0;me.el=0;me.out=false;me.w=0;
+    $('#mcName').textContent=me.name;const mt=$('#mcTeam');mt.textContent=TEAMS[me.team].n;mt.style.background=TEAMS[me.team].c;
+    cam.x=me.x;cam.y=me.y;
+    toast(isTouch?'Kiri: gerak · Kanan: bidik & tembak. Peluru habis? Ketuk tombol Isi Amunisi.':'Tembak lawan. Peluru habis? Tekan R untuk soal.');
+  }else if(m==='spec'){P({sp:1,n:'Layar Kelas'})}
+  if(room&&m==='player')P(buildPatch());
+}
+$('#form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=$('#nm').value.trim().slice(0,14);if(!name)return;
+  try{localStorage.setItem('arena-nama',name)}catch{}
+  const lo=lobbyOut(),cnt=teamCounts().map((n,i)=>lo[i]?99:n);
+  let t=pickTeam;if(t>=0&&lo[t]){toast('Tim itu sudah tersingkir dan tidak bisa dimasuki lagi. Pilih tim lain.');pickTeam=-1;renderLobbyTeams();return}
+  if(t<0){const min=Math.min(...cnt);const c=cnt.map((n,i)=>n===min?i:-1).filter(i=>i>=0);t=c[Math.floor(Math.random()*c.length)]}
+  me.name=name;me.team=t;
+  if(roomKind!=='online'){room=makeLocalRoom();roomKind='solo'}
+  startMode('player');
+});
+$('#specBtn').onclick=()=>{if(roomKind!=='online'){room=makeLocalRoom();roomKind='solo'}me.name='';startMode('spec')};
+$('#soloBtn').onclick=()=>{
+  const name=$('#nm').value.trim().slice(0,14)||'Pemain';me.name=name;
+  me.team=pickTeam>=0?pickTeam:Math.floor(Math.random()*5);
+  room=makeLocalRoom();roomKind='solo';startMode('player');
+};
+try{const n=localStorage.getItem('arena-nama');if(n)$('#nm').value=n}catch{}
+renderLobbyTeams();
+
+/* ====== Ruang online lewat WebSocket, dengan kode game dan kendali guru ====== */
+let myCode='',isTeacher=false;
+function wsRoom(){return new Promise(res=>{
+  let ws,id=null,my={},cache={},open=false,done=false,retry=0,pend=false,pj=null,joined=null;
+  const tx=o=>{if(open&&ws.readyState===1)ws.send(JSON.stringify(o))};
+  const api={presence(p){Object.assign(my,p);send();return Promise.resolve()},
+    peers(){const out=[{peer:id||'me',by:null,isMe:true,sameTab:true,kind:'viewer',guest:false,updatedAt:0,presence:my}];
+      for(const k in cache)out.push({peer:k,by:null,isMe:false,sameTab:false,kind:'viewer',guest:false,updatedAt:0,presence:cache[k]});return out},
+    connected:()=>open,
+    join(code,role,pin){return new Promise((rs,rj)=>{if(!open)return rj(new Error('Belum tersambung ke server.'));pj={rs,rj};joined={code,role,pin};cache={};tx({t:'join',code,role,pin})})},
+    ctl(a,x){tx({t:'ctl',a,...x})},ans(qt,ok,n,tm){tx({t:'ans',qt,ok:ok?1:0,n,tm})},qs(a){tx({t:'qs',qs:a})},rep(){tx({t:'rep'})}};
+  function send(){if(!open||pend||!joined||!Object.keys(my).length)return;pend=true;setTimeout(()=>{pend=false;tx({t:'pr',p:my})},60)}
+  function conn(){
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+    ws.onopen=()=>{open=true;retry=0;$('#netbar').hidden=true;if(joined)tx({t:'join',...joined});if(!done){done=true;res(api)}};
+    ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}
+      if(m.now)OFF=m.now-_rn();
+      if(m.t==='hi')id=m.id;
+      else if(m.t==='st')GS={status:m.status,startAt:m.startAt,r:m.r,pausedAt:m.pausedAt||0};if(m.play)setCfg(m.play,m.goal|0);
+      else if(m.t==='ok'){if(joined)joined.code=m.code;if(m.teacher&&m.fresh&&GS.r>0)tx({t:'restore',r:GS.r,status:GS.status,startAt:GS.startAt,pausedAt:GS.pausedAt||0,play:Math.round(PLAY_SEC/60),goal:QGOAL});if(m.teacher){tx({t:'ctl',a:'cfg',play:+$('#cfgPlay').value,goal:+$('#cfgGoal').value});if(customBank)tx({t:'qs',qs:customBank})}if(pj){pj.rs(m);pj=null}else if(Object.keys(my).length)tx({t:'pr',p:my})}
+      else if(m.t==='err'){if(pj){joined=null;pj.rj(new Error(m.m));pj=null}else if(joined)setTimeout(()=>tx({t:'join',...joined}),3000)}
+      else if(m.t==='rep'){lastRep=m;if(tmView==='rep')renderTM()}else if(m.t==='qs')applyQs(m.qs);else if(m.t==='qsok')toast(m.n?'Bank soal tersimpan: '+m.n+' soal':'Memakai soal bawaan');else if(m.t==='qserr')toast(m.m);else if(m.t==='kick'){alert('Kamu dikeluarkan oleh guru.');location.reload()}else if(m.t==='mv')moved(m.tm);
+      else if(m.t==='d'){for(const k in m.p)if(k!==id)cache[k]=m.p[k];(m.g||[]).forEach(k=>delete cache[k])}};
+    ws.onclose=()=>{open=false;cache={};if(joined)$('#netbar').hidden=false;setTimeout(conn,Math.min(5000,1000*++retry))};
+    ws.onerror=()=>{try{ws.close()}catch{}};
+  }
+  conn();setInterval(()=>tx({t:'ping'}),20000);
+  setTimeout(()=>{if(!done){done=true;res(null)}},90000);
+})}
+function codeErr(t){$('#gcMsg').textContent=t}
+async function doJoin(role,code,pin){
+  if(!room||roomKind!=='online'){codeErr('Belum tersambung ke server. Tunggu sebentar lalu coba lagi.');return false}
+  try{const r=await room.join(code,role,pin);myCode=r.code;isTeacher=!!r.teacher;return true}
+  catch(e){codeErr(e.message||'Gagal masuk.');return false}
+}
+$('#gcGo').onclick=async()=>{const c=$('#gc').value.trim().toUpperCase();if(c.length<5)return codeErr('Masukkan 5 karakter kode dari guru.');codeErr('Memeriksa kode…');if(await doJoin('p',c)){$('#codeBox').hidden=true;$('#form').hidden=false;codeErr('')}};
+$('#gc').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#gcGo').click()}});
+$('#teachBtn').onclick=async()=>{const pin=prompt('Masukkan PIN guru:');if(!pin)return;codeErr('Membuat game…');if(await doJoin('g','',pin)){me.name='';$('#codeBox').hidden=true;startMode('spec')}};
+$('#soloBtn2').onclick=()=>$('#soloBtn').click();
+const QS0=QS.slice();let customBank=null;
+function applyQs(a){QS.length=0;(a&&a.length?a:QS0).forEach(x=>QS.push(x));shuffleDeck();if(!isTeacher&&mode==='player')toast('Guru memperbarui bank soal ('+QS.length+' soal)')}
+function qsToText(a){return a.map(x=>x.q+'\n'+x.o.map((t,i)=>'ABCDE'[i]+'. '+t).join('\n')+'\nJawaban: '+'ABCDE'[x.a]+'\nPenjelasan: '+(x.e||'')).join('\n\n')}
+function csvSplit(line,sep){const r=[];let c='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(q){if(ch==='"'){if(line[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===sep){r.push(c);c=''}else c+=ch}r.push(c);return r.map(x=>x.trim())}
+function parseQs(text){
+  text=String(text).replace(/^\ufeff/,'').replace(/\r/g,'');const qs=[],errs=[],L=text.split('\n').filter(l=>l.trim());
+  if(!L.length)return{qs,errs};
+  const fl=L[0].toLowerCase();
+  if(/^"?soal"?\s*[;,\t]/.test(fl)){
+    const sep=fl.includes(';')?';':fl.includes('\t')?'\t':',',H=csvSplit(L[0],sep).map(x=>x.toLowerCase());
+    const ix=n=>H.indexOf(n),oi=['a','b','c','d','e'].map(ix).filter(i=>i>=0);
+    L.slice(1).forEach((ln,k)=>{
+      const c=csvSplit(ln,sep),o=[];for(const i of oi){if(!c[i])break;o.push(c[i])}
+      const a='abcde'.indexOf(String(c[ix('kunci')]||'').toLowerCase().trim()[0]),q=c[ix('soal')];
+      if(!q||o.length<2||a<0||a>=o.length)errs.push('Baris '+(k+2)+' tidak valid.');else qs.push({q,o,a,e:c[ix('penjelasan')]||''})});
+    return{qs,errs};
+  }
+  text.split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean).forEach((b,k)=>{
+    let q=[],o=[],a=-1,e='',md='q';
+    for(const raw of b.split('\n')){const ln=raw.trim();let m;
+      if(m=ln.match(/^([A-Ea-e])[.)]\s*(.+)$/)){md='o';o.push(m[2])}
+      else if(m=ln.match(/^jawaban\s*[:=]\s*([A-Ea-e])/i)){a='abcde'.indexOf(m[1].toLowerCase());md='a'}
+      else if(m=ln.match(/^penjelasan\s*[:=]\s*(.*)$/i)){e=m[1];md='e'}
+      else if(md==='q')q.push(ln.replace(/^\d+[.)]\s*/,''));
+      else if(md==='e')e+=' '+ln;
+      else if(md==='o'&&o.length)o[o.length-1]+=' '+ln}
+    const qq=q.join(' ').trim();
+    if(!qq||o.length<2||o.length>5||a<0||a>=o.length)errs.push('Soal #'+(k+1)+' tidak valid.');else qs.push({q:qq,o,a,e:e.trim()})});
+  return{qs,errs};
+}
+
+function renderQB(){
+  const body=$('#tmBody');body.textContent='';
+  body.append(el('p','Tempel soal dengan format blok (pisahkan antar soal dengan baris kosong; tiap soal: pertanyaan, pilihan A–E, lalu "Jawaban: X" dan "Penjelasan: ..."), atau muat file CSV (kolom: Soal;A;B;C;D;E;Kunci;Penjelasan, simpan sebagai CSV UTF-8).'));
+  const ta=el('textarea');ta.rows=14;ta.value=qsToText(QS);body.append(ta);
+  const msg=el('p','');
+  const fi=el('input');fi.type='file';fi.accept='.csv,.txt,text/plain,text/csv';
+  fi.onchange=()=>{const f=fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ta.value=String(r.result);msg.textContent='File dimuat. Periksa isinya, lalu klik Simpan.'};r.readAsText(f,'utf-8')};
+  const sv=el('button','Simpan & kirim ke siswa','go sm'),df=el('button','Pakai soal bawaan','ghost sm'),tp=el('button','Unduh contoh CSV','ghost sm');
+  sv.type=df.type=tp.type='button';
+  sv.onclick=()=>{const r=parseQs(ta.value);
+    if(!r.qs.length){msg.textContent='Tidak ada soal valid. '+r.errs.slice(0,3).join(' ');return}
+    if(r.errs.length&&!confirm(r.errs.length+' soal dilewati karena tidak valid ('+r.errs.slice(0,2).join(' ')+'). Tetap simpan '+r.qs.length+' soal lainnya?'))return;
+    customBank=r.qs;room.qs(r.qs);msg.textContent='Mengirim '+r.qs.length+' soal…'};
+  df.onclick=()=>{if(confirm('Kembali memakai soal bawaan?')){customBank=null;room.qs(null);ta.value=qsToText(QS0)}};
+  tp.onclick=()=>{const t='Soal;A;B;C;D;E;Kunci;Penjelasan\r\n"Simbol belah ketupat pada flowchart dipakai untuk?";Mulai;Proses;Keputusan;Output;;C;"Belah ketupat menandakan percabangan ya/tidak."\r\n"Perintah untuk menampilkan hasil ke layar disebut?";Input;Output;Variabel;Loop;;B;"Output menampilkan hasil."',b=new Blob(['\ufeff'+t],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='contoh-soal-arena.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+  body.append(fi,msg,sv,df,tp);
+}
+function tutSteps(){
+  const mnt=Math.round(PLAY_SEC/60);
+  const mv=isTouch?'Gerak: <b>stik kiri</b> · Bidik dan tembak: <b>stik kanan</b> · Soal: tombol <b>ISI AMUNISI</b>':'Gerak: <b>W A S D</b> · Bidik: <b>mouse</b> · Tembak: <b>klik</b> atau spasi · Soal: <b>R</b> · Zona Soal: <b>E</b>';
+  return[
+    {t:'Tujuan permainan',b:['Lima tim saling memburu. Setiap tim adalah <b>pemburu sekaligus buruan</b> bagi semua tim lain.','Tembak pemain tim lain. Teman satu tim tidak bisa kamu tembak.','Tim yang semua anggotanya kehabisan nyawa <b>tersingkir</b>. Tim yang tersingkir paling awal <b>kalah</b>.']},
+    {t:'Bergerak dan menembak',b:[mv,'Berlindung di balik karung pasir dan batu, jangan berdiri di tempat terbuka.','Setelah jatuh, kamu hidup lagi di markas timmu dengan perisai singkat.']},
+    {t:'Posisi tubuh dan bersembunyi',b:[isTouch?'Ketuk tombol <b>Berdiri · Jongkok · Merangkak · Tiarap</b> di bawah layar.':'Tombol <b>1 2 3 4</b> (atau C = jongkok, X = merangkak, Z = tiarap).','Makin rendah, makin <b>sulit tertembak</b> dan bidikan makin stabil, tetapi jalanmu makin <b>lambat</b>.','Masuk ke <b>semak belukar</b> dengan posisi jongkok atau lebih rendah: lawan tidak bisa melihatmu dari jauh. Menembak membuka persembunyianmu selama 1,5 detik.']},
+    {t:'Peluru dan soal',b:['Peluru terbatas. Saat peluru tinggal 5, jawab soal untuk <b>mengisi peluru</b>.','Jawaban benar: <b>+30 poin</b>, peluru penuh, perisai 4 detik. Salah: peluru +3.','Masuk lingkaran <b>Zona Soal</b> di tengah arena: poin <b>×2</b> dan <b>+1 nyawa</b>.']},
+    {t:'Nyawa dan membantu tim',b:['Tiap pemain punya <b>5 nyawa</b>. Nyawa habis berarti kamu tersingkir.','Siswa yang nyawanya habis <b>tidak bisa hidup lagi</b>, tetapi tetap membantu: jawab soal (tombol R) untuk <b>mengisi amunisi kawan satu tim</b>.','Selama menunggu, kamera mengikuti temanmu. Ketuk layar untuk ganti teman.']},
+    {t:'Cara menang',b:['Game berakhir saat waktu '+mnt+' menit habis, tinggal satu tim, atau satu tim sudah menjawab '+QGOAL+' soal.','Tim yang bertahan diurutkan dari <b>poin terbanyak</b>.','Menjawab soal bernilai jauh lebih besar daripada menembak (KO hanya +5), jadi jangan hanya mengejar tembakan!']}
+  ];
+}
+let tutI=0;
+function closeTut(){$('#tut').hidden=true}
+function openTut(){tutI=0;$('#tut').hidden=false;try{localStorage.setItem('arena_tut','1')}catch{}if(mode==='player')me.shield=Math.max(me.shield,6);renderTut()}
+function renderTut(){
+  const S=tutSteps(),s=S[tutI];
+  $('#tutN').textContent='Cara bermain · '+(tutI+1)+' dari '+S.length;$('#tutT').textContent=s.t;
+  $('#tutB').innerHTML=s.b.map(x=>'<li>'+x+'</li>').join('');
+  $('#tutDots').textContent='●'.repeat(tutI+1)+'○'.repeat(S.length-tutI-1);
+  $('#tutBack').disabled=tutI===0;$('#tutNext').textContent=tutI===S.length-1?'Mengerti!':'Lanjut';
+}
+$('#tutNext').onclick=()=>{if(tutI>=tutSteps().length-1)closeTut();else{tutI++;renderTut()}};
+$('#tutBack').onclick=()=>{if(tutI>0){tutI--;renderTut()}};
+$('#tutSkip').onclick=closeTut;$('#btnHow').onclick=openTut;$('#howBtn').onclick=openTut;
+let lastRep=null,tmView='',tmSig='';
+function moved(tm){me.team=tm;const s=spawnPos(tm);me.x=s.x;me.y=s.y;me.shield=2.5;cam.x=me.x;cam.y=me.y;pushNow();toast('Guru memindahkan kamu ke Tim '+TEAMS[tm].n)}
+function el(tag,txt,cls){const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;if(cls)e.className=cls;return e}
+function openTM(v){tmView=v;tmSig='';$('#tmod').hidden=false;$('#tmTitle').textContent=v==='rep'?'Laporan jawaban':v==='qb'?'Bank soal':'Kelola pemain';if(v==='rep'){lastRep=null;renderTM();room&&room.rep&&room.rep()}else renderTM()}
+function renderTM(){
+  if($('#tmod').hidden)return;const body=$('#tmBody');
+  if(tmView==='rep'){
+    body.textContent='';
+    if(!lastRep){body.append(el('p','Mengambil data…'));return}
+    const stu=[...lastRep.stu].sort((a,b)=>b.b-a.b),qs=lastRep.qs;
+    const tb=stu.reduce((a,x)=>a+x.b,0),tt=tb+stu.reduce((a,x)=>a+x.s,0);
+    body.append(el('p',`Total jawaban: ${tt} · benar ${tt?Math.round(tb/tt*100):0}%`));
+    const t1=el('table'),h=el('tr');['Nama','Tim','Benar','Salah','% benar'].forEach(x=>h.append(el('th',x)));t1.append(h);
+    stu.forEach(x=>{const r=el('tr'),n=x.b+x.s;[x.n,'Tim '+TEAMS[x.tm].n,x.b,x.s,n?Math.round(x.b/n*100)+'%':'-'].forEach(v=>r.append(el('td',String(v))));t1.append(r)});
+    body.append(t1);
+    const hard=qs.filter(x=>x.b+x.s>=2).sort((a,b)=>b.s/(b.b+b.s)-a.s/(a.b+a.s)).slice(0,5);
+    body.append(el('h4','Soal paling sering salah'));
+    if(!hard.length)body.append(el('p','Belum cukup data.'));
+    hard.forEach(x=>{const n=x.b+x.s;body.append(el('p',`${Math.round(x.s/n*100)}% salah (${x.s} dari ${n}) · ${x.t}`))});
+    body.append(el('h4','Peringatan data tidak wajar'));
+    const sus=lastRep.sus||[];
+    if(!sus.length)body.append(el('p','Tidak ada. Server tidak perlu mengoreksi data siapa pun.'));
+    else{body.append(el('p','Server mengoreksi data yang tidak wajar (lonjakan jawaban, poin, nyawa, atau perpindahan). Ini petunjuk, bukan bukti: periksa dulu sebelum mengeluarkan pemain.'));
+      sus.sort((a,b)=>b.v-a.v).forEach(x=>body.append(el('p',`${x.n} (Tim ${TEAMS[x.tm]?TEAMS[x.tm].n:'?'}) · ${x.v} kali dikoreksi`)))}
+    const dl=el('button','Unduh CSV','go sm');dl.type='button';dl.onclick=downloadCSV;body.append(dl);
+  }else if(tmView==='qb'){renderQB()}
+  else{
+    const sig=others.map(o=>o.id+'|'+o.team+'|'+o.name).join(',');if(sig===tmSig)return;tmSig=sig;
+    body.textContent='';
+    if(!others.length){body.append(el('p','Belum ada pemain.'));return}
+    const t=el('table'),h=el('tr');['Nama','Tim','Aksi'].forEach(x=>h.append(el('th',x)));t.append(h);
+    [...others].sort((a,b)=>a.team-b.team||String(a.name).localeCompare(String(b.name))).forEach(o=>{
+      const r=el('tr'),sel=el('select');TEAMS.forEach((tm,i)=>{const op=el('option','Tim '+tm.n);op.value=i;sel.append(op)});sel.value=o.team;
+      const mv=el('button','Pindahkan','ghost sm'),kk=el('button','Keluarkan','ghost sm');mv.type=kk.type='button';
+      mv.onclick=()=>room.ctl('move',{id:o.id,tm:+sel.value});
+      kk.onclick=()=>{if(confirm('Keluarkan '+o.name+' dari game?'))room.ctl('kick',{id:o.id})};
+      const c1=el('td',o.name),c2=el('td'),c3=el('td');c2.append(sel);c3.append(mv,kk);r.append(c1,c2,c3);t.append(r)});
+    body.append(t);
+  }
+}
+function downloadCSV(){
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"',L=['Nama;Tim;Benar;Salah;Persen benar'];
+  lastRep.stu.forEach(x=>{const n=x.b+x.s;L.push([q(x.n),q('Tim '+TEAMS[x.tm].n),x.b,x.s,n?Math.round(x.b/n*100):0].join(';'))});
+  L.push('');L.push('Soal;Benar;Salah;Persen salah');
+  lastRep.qs.forEach(x=>{const n=x.b+x.s;L.push([q(x.t),x.b,x.s,n?Math.round(x.s/n*100):0].join(';'))});
+  const b=new Blob(['\ufeff'+L.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='laporan-arena.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+$('#ctlQb').onclick=()=>openTM('qb');const sendCfg=()=>room&&room.ctl&&room.ctl('cfg',{play:+$('#cfgPlay').value,goal:+$('#cfgGoal').value});
+$('#cfgPlay').onchange=sendCfg;$('#cfgGoal').onchange=sendCfg;
+$('#ctlRep').onclick=()=>openTM('rep');$('#ctlPl').onclick=()=>openTM('pl');$('#tmClose').onclick=()=>{$('#tmod').hidden=true};
+$('#ctlPause').onclick=()=>room&&room.ctl&&room.ctl(GS.status==='pause'?'resume':'pause');
+$('#ctlStart').onclick=()=>{if(cur.phase==='play'&&!confirm('Game sedang berjalan. Mulai ulang dari awal?'))return;room&&room.ctl&&room.ctl('start')};
+$('#ctlStop').onclick=()=>{if(confirm('Akhiri game dan kembali ke status menunggu?'))room&&room.ctl&&room.ctl('stop')};
+
+/* ====== Mulai ====== */
+(async()=>{
+  const ready=document.fonts&&document.fonts.load?Promise.race([Promise.all([document.fonts.load('700 16px "Chakra Petch"'),document.fonts.load('500 16px "Barlow"')]),new Promise(r=>setTimeout(r,1500))]):Promise.resolve();
+  await ready.catch(()=>{});
+  renderStatic();resize();requestAnimationFrame(frame);
+  try{const r=await wsRoom();if(r){room=r;roomKind='online'}else roomKind='solo-only'}catch{roomKind='solo-only'}
+  if(roomKind==='solo-only')$('#lstat').textContent='Ruang online tidak tersedia di tampilan ini. Kamu masih bisa berlatih solo dengan bot.';
+})();
+window.__arena={me,bullets,get others(){return others},get scores(){return scores},get mode(){return mode}};
+})();
+</script>
+
+</body></html>
